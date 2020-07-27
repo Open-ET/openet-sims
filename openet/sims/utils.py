@@ -37,11 +37,17 @@ def constant_image_value(image, crs='EPSG:32613', scale=1):
         geometry=ee.Geometry.Rectangle([0, 0, 10, 10], crs, False)))
 
 
-def point_image_value(image, xy, scale=1):
+def point_image_value(image, xy, scale=1, get_info=True):
     """Extract the output value from a calculation at a point"""
-    return getinfo(ee.Image(image).reduceRegion(
-        reducer=ee.Reducer.first(), geometry=ee.Geometry.Point(xy),
-        scale=scale))
+    if get_info:
+        image_value = getinfo(ee.Image(image).reduceRegion(
+            reducer=ee.Reducer.first(), geometry=ee.Geometry.Point(xy),
+            scale=scale))
+    else:
+        image_value = ee.Image(image).reduceRegion(
+            reducer=ee.Reducer.first(), geometry=ee.Geometry.Point(xy),
+            scale=scale)
+    return image_value
 
 
 def point_coll_value(coll, xy, scale=1):

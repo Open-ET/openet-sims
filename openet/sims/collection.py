@@ -670,6 +670,221 @@ class Collection():
                 agg_start_date=start_date, agg_end_date=end_date,
                 date_format='YYYYMMdd'))
 
+    def run_water_balance(self, variables=None, interp_method='linear',
+                    interp_days=32, bare_soil=False,
+                    precip_source='IDAHO_EPSCOR/GRIDMET', precip_band='pr',
+                    **kwargs):
+        """
+
+        Parameters
+        ----------
+        variables : 
+        interp_method : {'linear'}, optional
+            Interpolation method (the default is 'linear').
+        interp_days : int, str, optional
+            Number of extra days before the start date and after the end date
+            to include in the interpolation calculation. (the default is 32).
+        bare_soil : bool, optional
+            Run water balance with no vegetation. When True, dual crop 
+            coefficient is equal to evaporation coefficient (K_e).
+        precip_source : str
+            EE asset that includes precip
+        precip_band : str
+        kwargs : dict, optional
+
+        Returns
+        -------
+        ee.List
+
+        Raises
+        ------
+        ValueError for unsupported input parameters
+        ValueError for negative interp_days values
+        TypeError for non-integer interp_days
+
+        Notes
+        -----
+        Requires daily interpolation of fractional cover.
+
+        """
+
+        # temporary field capacity and wilting point from Nebraska folks
+        # TODO: get general soil asset
+        field_capacity = ee.Image('users/dohertyconor/Fc_p44_r33_clip')
+        wilting_point = ee.Image('users/dohertyconor/Wp_p44_r33_clip')
+
+        # Available water content (mm)
+        awc = field_capacity.subtract(wilting_point)
+
+        # Fraction of wetting
+        # Setting to 1 for now (precip), but could be lower for irrigation
+        frac_wet = ee.Image(1)
+
+        # Depth of evaporable zone
+        # Set to 100 cm
+        z_e = .1
+
+        # Total evaporable water (mm)
+        # Allen et al. 1998 eqn 73
+        tew = field_capacity.expression(
+            '1000*(b()-0.5*wp)*z_e',
+            {'wp': wilting_point, 'z_e': z_e}
+        )
+
+        # Readily evaporable water (mm)
+        rew = awc.expression('0.8+54.4*b()')
+        rew = rew.where(rew.gt(tew), tew)
+
+        # Coefficients for skin layer retention, Allen (2011)
+        c0 = ee.Image(0.8)
+        c1 = c0.expression('2*(1-b())')
+
+        # 1.2 is max for grass reference (ETo)
+        ke_max = ee.Image(1.2)
+
+        # Fraction of precip that evaps today vs tomorrow
+        # .5 is arbitrary
+        frac_day_evap = ee.Image(0.5)
+
+        # Get daily collection as starting point for water balance
+        interp_coll = self.interpolate(
+            t_interval='daily',
+            variables=['et', 'et_reference', 'et_fraction'],
+            interp_method=interp_method,
+            interp_days=interp_days)
+
+        # Get precip collection
+        daily_pr_coll = ee.ImageCollection(precip_source) \
+            .select(precip_band)
+
+        # Assume soil is at field capacity to start
+        # i.e. depletion = 0
+        init_de = ee.Image(ee.Image(0.0).select([0], ['de']))
+        init_de_rew = ee.Image(ee.Image(0.0).select([0], ['de_rew']))
+        init_c_eff = ee.Image(init_de \
+            .expression(
+                "C0+C1*(1-b()/TEW)",
+                {'C0': c0, 'C1': c1, 'TEW': tew}) \
+            .min(1) \
+            .select([0], ['c_eff']))
+
+        # Create list to hold water balance rasters when iterating over collection
+        # Doesn't seem like you can create an empty list in ee?
+        init_img = ee.Image([init_de, init_de_rew, init_c_eff])
+        init_img_list = ee.ImageCollection([init_img]).toList(1)
+
+        # Convert interp collection to list
+        interp_list = interp_coll.toList(interp_coll.size())
+        # Is list guaranteed to have right order?
+        # (Seems to be fine in initial testing.)
+        #interp_list = interp_list.sort(ee.List(['system:index']))
+
+        # Perform daily water balance update
+        def water_balance_step(img, wb_coll):
+            # Explicit cast ee.Image
+            prev_img = ee.Image(ee.List(wb_coll).get(-1))
+            curr_img = ee.Image(img)
+
+            # Make precip image with bands for today and tomorrow
+            curr_date = curr_img.date()
+            curr_precip = ee.Image(daily_pr_coll
+                .filterDate(curr_date, curr_date.advance(1, 'day')).first())
+            next_precip = ee.Image(daily_pr_coll
+                .filterDate(curr_date.advance(1, 'day'), curr_date.advance(2, 'day')).first())
+            precip_img = ee.Image([curr_precip, next_precip]) \
+                .rename(['current', 'next'])
+
+            # Fraction of day stage 1 evap
+            # Allen 2011, eq 12
+            ft = rew.expression(
+                '(b()-de_rew_prev)/(ke_max*eto)',
+                {
+                    'de_rew_prev': prev_img.select('de_rew'),
+                    'rew': rew,
+                    'ke_max': ke_max,
+                    'eto': curr_img.select('et_reference')}).clamp(0.0, 1.0)
+
+            # Soil evap reduction coeff, FAO 56
+            kr = tew.expression(
+                "(b()-de_prev)/(b()-rew)",
+                {
+                    'de_prev': prev_img.select('de'),
+                    'rew': rew}).clamp(0.0, 1.0)
+
+            # Soil evap coeff, FAO 56
+            ke = ft.expression(
+                "(b() + (1 - b()) * kr) * ke_max",
+                {
+                    'kr': kr,
+                    'ke_max': ke_max})
+
+            # Dual crop coefficient: Kc = Kcb + Ke
+            if not bare_soil:
+                kc = ke.add(curr_img.select('et_fraction')).rename('kc')
+            else:
+                kc = ke.rename('kc')
+
+            # Crop ET (note that Kc in other parts of code refers to *basal*
+            # crop coeff (Kcb))
+            etc = kc.multiply(curr_img.select('et_reference')).rename('etc')
+
+            # Depletion, FAO 56
+            de = prev_img.select('de') \
+                .subtract(
+                    frac_day_evap
+                        .multiply(ee.Image(precip_img.select('next')))
+                        .add(
+                            ee.Image(1)
+                                .subtract(frac_day_evap)
+                                .multiply(precip_img.select('current')))) \
+                .add(etc) \
+                .select([0], ['de'])
+
+            # Can't have negative depletion
+            de = de.min(tew).max(0)
+
+            # Stage 1 depletion (REW)
+            # Allen 2011
+            de_rew = prev_img.select('de_rew')\
+                .subtract(
+                    frac_day_evap
+                        .multiply(precip_img.select('next'))
+                        .add(
+                            ee.Image(1)
+                            .subtract(frac_day_evap)
+                            .multiply(precip_img.select('current'))
+                        )
+                        .multiply(prev_img.select('c_eff'))
+                ) \
+            .add(etc) \
+            .select([0], ['de_rew'])
+
+            # Can't have negative depletion
+            de_rew = de_rew.min(rew).max(0)
+
+            # Efficiency of skin layer
+            # Allen 2011, eq 15
+            c_eff = de \
+                .expression(
+                    "c0+c1*(1-b()/tew)",
+                    {'c0': c0, 'c1': c1, 'tew': tew}
+                ) \
+                .min(1) \
+                .select([0], ['c_eff'])
+
+            # Make image to add to list
+            new_day_img = ee.Image(
+                curr_img.addBands(
+                    ee.Image([de, de_rew, c_eff, kc, etc, curr_precip])
+                )
+            )
+
+            return ee.List(wb_coll).add(new_day_img)
+
+        wb_collection = interp_list.iterate(water_balance_step, init_img_list)
+
+        return wb_collection
+
     def get_image_ids(self):
         """Return image IDs of the input images
 
