@@ -7,13 +7,14 @@ from dateutil.relativedelta import *
 from . import utils
 
 import openet.core.interpolate
+import ipdb
 # TODO: import utils from openet.core
 # import openet.core.utils as utils
 
 
 def from_scene_et_fraction(scene_coll, start_date, end_date, variables,
                            interp_args, model_args, t_interval='custom',
-                           use_joins=False,
+                           use_joins=False, water_balance=False,
                            _interp_vars=['et_fraction', 'ndvi']):
     """Interpolate from a precomputed collection of Landast ET fraction scenes
 
@@ -215,6 +216,10 @@ def from_scene_et_fraction(scene_coll, start_date, end_date, variables,
         use_joins=use_joins,
         compute_product=False,
     )
+
+    if water_balance:
+        spinup_start_date = start_dt - datetime.timedelta(days=30)
+        ipdb.set_trace()
 
     # The interpolate.daily() function can/will return the product of
     # the source and target image named as "{source_band}_1".

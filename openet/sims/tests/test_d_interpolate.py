@@ -5,6 +5,7 @@ import pytest
 
 import openet.sims.interpolate as interpolate
 import openet.sims.utils as utils
+import ipdb
 
 
 def scene_coll(variables, et_fraction=0.4, et=5, ndvi=0.6):
@@ -156,3 +157,16 @@ def test_from_scene_et_fraction_monthly_et_reference_resample(tol=0.0001):
     assert abs(output['et_reference']['2017-07-01'] - 232.3) <= tol
     assert abs(output['et']['2017-07-01'] - (232.3 * 0.4)) <= tol
     assert output['count']['2017-07-01'] == 3
+
+def test_water_balance(tol=0.0001):
+    output_coll = interpolate.from_scene_et_fraction(
+        scene_coll(['et_fraction', 'ndvi', 'time', 'mask']),
+        start_date='2017-07-01', end_date='2017-08-01',
+        variables=['et', 'et_reference', 'et_fraction', 'ndvi'],
+        interp_args={'interp_method': 'linear', 'interp_days': 32},
+        model_args={'et_reference_source': 'IDAHO_EPSCOR/GRIDMET',
+                    'et_reference_band': 'eto',
+                    'et_reference_factor': 1.0,
+                    'et_reference_resample': 'nearest'},
+        t_interval='daily',
+        water_balance=True)
