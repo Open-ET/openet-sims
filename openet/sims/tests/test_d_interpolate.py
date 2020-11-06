@@ -5,6 +5,7 @@ import pytest
 
 import openet.sims.interpolate as interpolate
 import openet.sims.utils as utils
+from openet.sims.image import Image
 import ipdb
 
 
@@ -159,14 +160,54 @@ def test_from_scene_et_fraction_monthly_et_reference_resample(tol=0.0001):
     assert output['count']['2017-07-01'] == 3
 
 def test_water_balance(tol=0.0001):
+    TEST_POINT = (-121.5265, 38.7399)
+    et_reference_source = 'projects/climate-engine/cimis/daily'
+    et_reference_band = 'ETo'
+    start_date = '2017-01-01'
+    end_date = '2017-02-01'
+
+    ls8 = ee.ImageCollection('LANDSAT/LC08/C01/T1_SR')\
+            .filterDate(start_date, end_date)\
+            .filterBounds(ee.Geometry.Point(TEST_POINT))
+
+    def make_et_frac(img):
+        return Image.from_landsat_c1_sr(img,
+                    et_reference_source=et_reference_source, 
+                    et_reference_band=et_reference_band)\
+                .calculate(['et_reference', 'et_fraction'])
+
+    test_imgs = ls8.map(make_et_frac)
     output_coll = interpolate.from_scene_et_fraction(
-        scene_coll(['et_fraction', 'ndvi', 'time', 'mask']),
-        start_date='2017-07-01', end_date='2017-08-01',
-        variables=['et', 'et_reference', 'et_fraction', 'ndvi'],
+        test_imgs,
+        start_date=start_date,
+        end_date=end_date,
+        variables=['et_reference', 'et_fraction'],
         interp_args={'interp_method': 'linear', 'interp_days': 32},
         model_args={'et_reference_source': 'IDAHO_EPSCOR/GRIDMET',
                     'et_reference_band': 'eto',
                     'et_reference_factor': 1.0,
                     'et_reference_resample': 'nearest'},
         t_interval='daily',
-        water_balance=True)
+        water_balance=False)
+
+
+    ipdb.set_trace()
+            
+
+    #et_reference_source = 'projects/climate-engine/cimis/daily'
+    #et_reference_band = 'ETo'
+    #et_reference_factor = 1.0
+
+
+    #output_coll = interpolate.from_scene_et_fraction(
+    #    scene_coll(['et_fraction', 'ndvi', 'time', 'mask']),
+    #    start_date='2017-07-01', end_date='2017-08-01',
+    #    variables=['et', 'et_reference', 'et_fraction', 'ndvi'],
+    #    interp_args={'interp_method': 'linear', 'interp_days': 32},
+    #    model_args={'et_reference_source': 'IDAHO_EPSCOR/GRIDMET',
+    #                'et_reference_band': 'eto',
+    #                'et_reference_factor': 1.0,
+    #                'et_reference_resample': 'nearest'},
+    #    t_interval='daily',
+    #    water_balance=False)
+
