@@ -6,7 +6,6 @@ import pytest
 import openet.sims.interpolate as interpolate
 import openet.sims.utils as utils
 from openet.sims.image import Image
-import ipdb
 
 
 def scene_coll(variables, et_fraction=0.4, et=5, ndvi=0.6):
@@ -56,7 +55,7 @@ def test_from_scene_et_fraction_daily_values(tol=0.0001):
         scene_coll(['et_fraction', 'ndvi', 'time', 'mask']),
         start_date='2017-07-01', end_date='2017-08-01',
         variables=['et', 'et_reference', 'et_fraction', 'ndvi'],
-        interp_args={'interp_method': 'linear', 'interp_days': 32},
+        interp_args={'interp_method': 'linear', 'interp_days': 32,},
         model_args={'et_reference_source': 'IDAHO_EPSCOR/GRIDMET',
                     'et_reference_band': 'eto',
                     'et_reference_factor': 1.0,
@@ -163,51 +162,59 @@ def test_water_balance(tol=0.0001):
     TEST_POINT = (-121.5265, 38.7399)
     et_reference_source = 'projects/climate-engine/cimis/daily'
     et_reference_band = 'ETo'
-    start_date = '2017-01-01'
-    end_date = '2017-02-01'
+    start_date = '2018-03-01'
+    end_date = '2018-04-01'
 
     ls8 = ee.ImageCollection('LANDSAT/LC08/C01/T1_SR')\
             .filterDate(start_date, end_date)\
             .filterBounds(ee.Geometry.Point(TEST_POINT))
 
+    ls7 = ee.ImageCollection('LANDSAT/LE07/C01/T1_SR')\
+            .filterDate(start_date, end_date)\
+            .filterBounds(ee.Geometry.Point(TEST_POINT))
+
+    ls = ls7.merge(ls8)
+
+    zero = ls.first().select(['B2']).double().multiply(0)
+
+
     def make_et_frac(img):
-        return Image.from_landsat_c1_sr(img,
+        et_img = Image.from_landsat_c1_sr(img,
                     et_reference_source=et_reference_source, 
                     et_reference_band=et_reference_band)\
-                .calculate(['et_reference', 'et_fraction'])
+                .calculate(['ndvi', 'et_reference', 'et_fraction', 'et'])
+        time = ee.Number(img.get('system:time_start'))
+        et_img = et_img.addBands([zero.add(time).rename('time')])
+        return et_img
 
-    test_imgs = ls8.map(make_et_frac)
-    output_coll = interpolate.from_scene_et_fraction(
+    test_imgs = ls.map(make_et_frac)
+    normal_coll = interpolate.from_scene_et_fraction(
         test_imgs,
         start_date=start_date,
         end_date=end_date,
-        variables=['et_reference', 'et_fraction'],
-        interp_args={'interp_method': 'linear', 'interp_days': 32},
+        variables=['et_reference', 'et_fraction', 'et'],
+        interp_args={'interp_method': 'linear', 'interp_days': 14},
         model_args={'et_reference_source': 'IDAHO_EPSCOR/GRIDMET',
                     'et_reference_band': 'eto',
                     'et_reference_factor': 1.0,
                     'et_reference_resample': 'nearest'},
-        t_interval='daily',
-        water_balance=False)
+        t_interval='daily')
 
+    wb_coll = interpolate.from_scene_et_fraction(
+        test_imgs,
+        start_date=start_date,
+        end_date=end_date,
+        variables=['et_reference', 'et_fraction', 'ke', 'et'],
+        interp_args={'interp_method': 'linear', 'interp_days': 14,
+                     'water_balance': True},
+        model_args={'et_reference_source': 'IDAHO_EPSCOR/GRIDMET',
+                    'et_reference_band': 'eto',
+                    'et_reference_factor': 1.0,
+                    'et_reference_resample': 'nearest'},
+        t_interval='daily')
 
-    ipdb.set_trace()
-            
+    normal = utils.point_coll_value(normal_coll, TEST_POINT, scale=30)
+    wb = utils.point_coll_value(wb_coll, TEST_POINT, scale=30)
 
-    #et_reference_source = 'projects/climate-engine/cimis/daily'
-    #et_reference_band = 'ETo'
-    #et_reference_factor = 1.0
-
-
-    #output_coll = interpolate.from_scene_et_fraction(
-    #    scene_coll(['et_fraction', 'ndvi', 'time', 'mask']),
-    #    start_date='2017-07-01', end_date='2017-08-01',
-    #    variables=['et', 'et_reference', 'et_fraction', 'ndvi'],
-    #    interp_args={'interp_method': 'linear', 'interp_days': 32},
-    #    model_args={'et_reference_source': 'IDAHO_EPSCOR/GRIDMET',
-    #                'et_reference_band': 'eto',
-    #                'et_reference_factor': 1.0,
-    #                'et_reference_resample': 'nearest'},
-    #    t_interval='daily',
-    #    water_balance=False)
-
+    for date in normal['et'].keys():
+        assert wb['et'][date] >= normal['et'][date]
