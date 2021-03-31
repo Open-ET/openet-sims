@@ -226,7 +226,7 @@ def from_scene_et_fraction(scene_coll, start_date, end_date, variables,
     )
 
     if water_balance:
-        daily_coll = daily_bare_soil_ke(daily_coll, start_date, end_date,
+        daily_coll = daily_ke(daily_coll, start_date, end_date,
                                         model_args, **interp_args)
 
     # The interpolate.daily() function can/will return the product of
@@ -243,8 +243,9 @@ def from_scene_et_fraction(scene_coll, start_date, end_date, variables,
         def compute_et(img):
             """This function assumes ETr and ETf are present"""
             if water_balance:
-                et_frac = img.select(['et_fraction'])\
-                        .add(img.select(['ke'])).clamp(0, 1.2)
+                et_frac = img.select(['et_fraction'])
+                et_frac = et_frac.where(et_frac.lte(1.15),
+                                        et_frac.add(img.select(['ke'])).clamp(0, 1.15))
             else:
                 et_frac = img.select(['et_fraction'])
             et_img = et_frac.multiply(img.select(['et_reference']))
@@ -298,6 +299,41 @@ def from_scene_et_fraction(scene_coll, start_date, end_date, variables,
                 .filterDate(agg_start_date, agg_end_date) \
                 .mean().select(['ndvi']).float()
             image_list.append(ndvi_img)
+        if 'ke' in variables:
+            ke_img = daily_coll \
+                .filterDate(agg_start_date, agg_end_date) \
+                .mean().select(['ke']).float()
+            image_list.append(ke_img)
+        if 'kr' in variables:
+            kr_img = daily_coll \
+                .filterDate(agg_start_date, agg_end_date) \
+                .mean().select(['kr']).float()
+            image_list.append(kr_img)
+        if 'ft' in variables:
+            ft_img = daily_coll \
+                .filterDate(agg_start_date, agg_end_date) \
+                .mean().select(['ft']).float()
+            image_list.append(ft_img)
+        if 'de_rew' in variables:
+            de_rew_img = daily_coll \
+                .filterDate(agg_start_date, agg_end_date) \
+                .mean().select(['de_rew']).float()
+            image_list.append(de_rew_img)
+        if 'precip' in variables:
+            precip_img = daily_coll \
+                .filterDate(agg_start_date, agg_end_date) \
+                .mean().select(['precip']).float()
+            image_list.append(precip_img)
+        if 'de' in variables:
+            de_img = daily_coll \
+                .filterDate(agg_start_date, agg_end_date) \
+                .mean().select(['de']).float()
+            image_list.append(de_img)
+        if 'de_prev' in variables:
+            de_prev_img = daily_coll \
+                .filterDate(agg_start_date, agg_end_date) \
+                .mean().select(['de_prev']).float()
+            image_list.append(de_prev_img)
         if 'count' in variables:
             count_img = aggregate_coll \
                 .filterDate(agg_start_date, agg_end_date) \
@@ -366,7 +402,7 @@ def from_scene_et_fraction(scene_coll, start_date, end_date, variables,
             agg_start_date=start_date, agg_end_date=end_date,
             date_format='YYYYMMdd'))
 
-def daily_bare_soil_ke(daily_coll, start_date, end_date, model_args,
+def daily_ke(daily_coll, start_date, end_date, model_args,
                        precip_source='IDAHO_EPSCOR/GRIDMET', precip_band='pr',
                        fc_source='projects/eeflux/soils/gsmsoil_mu_a_fc_10cm_albers_100',
                        fc_band='b1',
@@ -426,12 +462,12 @@ def daily_bare_soil_ke(daily_coll, start_date, end_date, model_args,
     # Total evaporable water (mm)
     # Allen et al. 1998 eqn 73
     tew = field_capacity.expression(
-        '1000*(b()-0.5*wp)*z_e',
+        '10*(b()-0.5*wp)*z_e',
         {'wp': wilting_point, 'z_e': z_e}
     )
 
     # Readily evaporable water (mm)
-    rew = awc.expression('0.8+54.4*b()')
+    rew = awc.expression('0.8+54.4*b()/100')
     rew = rew.where(rew.gt(tew), tew)
 
     # Coefficients for skin layer retention, Allen (2011)
@@ -451,8 +487,10 @@ def daily_bare_soil_ke(daily_coll, start_date, end_date, model_args,
 
     # Assume soil is at field capacity to start
     # i.e. depletion = 0
-    init_de = ee.Image(ee.Image(0.0).select([0], ['de']))
-    init_de_rew = ee.Image(ee.Image(0.0).select([0], ['de_rew']))
+    #init_de = ee.Image(ee.Image(0.0).select([0], ['de']))
+    #init_de_rew = ee.Image(ee.Image(0.0).select([0], ['de_rew']))
+    init_de = tew.select([0], ['de'])
+    init_de_rew = rew.select([0], ['de_rew'])
     init_c_eff = ee.Image(init_de \
         .expression(
             "C0+C1*(1-b()/TEW)",
@@ -480,7 +518,7 @@ def daily_bare_soil_ke(daily_coll, start_date, end_date, model_args,
         # Make precip image with bands for today and tomorrow
         curr_date = curr_img.date()
         curr_precip = ee.Image(daily_pr_coll
-            .filterDate(curr_date, curr_date.advance(1, 'day')).first())
+            .filterDate(curr_date, curr_date.advance(1, 'day')).first()).rename('precip')
         next_precip = ee.Image(daily_pr_coll
             .filterDate(curr_date.advance(1, 'day'), curr_date.advance(2, 'day')).first())
         precip_img = ee.Image([curr_precip, next_precip]) \
@@ -494,14 +532,23 @@ def daily_bare_soil_ke(daily_coll, start_date, end_date, model_args,
                 'de_rew_prev': prev_img.select('de_rew'),
                 'rew': rew,
                 'ke_max': ke_max,
-                'eto': curr_img.select('et_reference')}).clamp(0.0, 1.0)
+                'eto': curr_img.select('et_reference')}).clamp(0.0, 1.0).rename('ft')
 
         # Soil evap reduction coeff, FAO 56
         kr = tew.expression(
             "(b()-de_prev)/(b()-rew)",
             {
                 'de_prev': prev_img.select('de'),
-                'rew': rew}).clamp(0.0, 1.0)
+                'rew': rew}).clamp(0.0, 1.0).rename('kr')
+        
+        de_prev = prev_img.select('de').rename('de_prev')
+
+        # precip only for now
+        # irrigation might have lower f_w
+        fw = prev_img.select('de').multiply(0).add(1).rename('fw')
+        low_few = fw.multiply(0).add(0.01).rename('low_few')
+        fc = curr_img.select('ndvi').multiply(1.26).subtract(0.18).rename('fc')
+        few = fw.min(fc.multiply(-1).add(1)).max(low_few).rename('few')
 
         # Soil evap coeff, FAO 56
         ke = ft.expression(
@@ -509,6 +556,7 @@ def daily_bare_soil_ke(daily_coll, start_date, end_date, model_args,
             {
                 'kr': kr,
                 'ke_max': ke_max}).rename('ke')
+        ke = ke.min(few.multiply(ke_max))
 
         # Dual crop coefficient: Kc = Kcb + Ke
         #kc = ke.add(curr_img.select('et_fraction')).rename('kc')
@@ -529,8 +577,8 @@ def daily_bare_soil_ke(daily_coll, start_date, end_date, model_args,
                         ee.Image(1)
                             .subtract(frac_day_evap)
                             .multiply(precip_img.select('current')))) \
-            .add(ete) \
-            .select([0], ['de'])
+            .add(ete.divide(few.select('few'))) \
+            .select([0], ['de']).rename('de')
 
         # Can't have negative depletion
         de = de.min(tew).max(0)
@@ -548,8 +596,8 @@ def daily_bare_soil_ke(daily_coll, start_date, end_date, model_args,
                     )
                     .multiply(prev_img.select('c_eff'))
             ) \
-        .add(ete) \
-        .select([0], ['de_rew'])
+        .add(ete.divide(few.select('few'))) \
+        .select([0], ['de_rew']).rename('de_rew')
 
         # Can't have negative depletion
         de_rew = de_rew.min(rew).max(0)
@@ -567,7 +615,7 @@ def daily_bare_soil_ke(daily_coll, start_date, end_date, model_args,
         # Make image to add to list
         new_day_img = ee.Image(
             curr_img.addBands(
-                ee.Image([de, de_rew, c_eff, ke, ete, curr_precip])
+                ee.Image([de, de_rew, c_eff, ke, kr, ft, de, de_rew, de_prev, ete, curr_precip, ft])
             )
         )
 
