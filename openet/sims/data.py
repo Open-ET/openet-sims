@@ -1,8 +1,8 @@
 """
 References
 ----------
-Allen, R. and L. Pereira (2009).  Estimating crop coefficients from
-    fraction of ground cover and height.  Irrigation Science 28:17-34.
+    Allen, R. and L. Pereira (2009).  Estimating crop coefficients from
+    fraction of ground cover and height. Irrigation Science 28:17-34.
     DOI 10.1007/s00271-009-0182-z
 """
 
@@ -11,9 +11,12 @@ int_scalar = 100
 
 cdl = {
     # Vines
-    69:  {'crop_class': 2, 'h_max': 2, 'm_l': 1.5, 'fr_mid': 0.95,
+    69:  {'crop_class': 2, 'h_max': 2, 'm_l': 1.5, 'fr_mid': 0.65,
+          'fr_end': 0.43, 'ls_start': 205, 'ls_stop': 265,
+          'name': 'Wine Grapes'},
+    78:  {'crop_class': 2, 'h_max': 2, 'm_l': 1.5, 'fr_mid': 0.95,
           'fr_end': 0.51, 'ls_start': 205, 'ls_stop': 265,
-          'name': 'Grapes'},
+          'name': 'Grapes (table/raisin)'},
 
     # Trees
     66:  {'crop_class': 3, 'h_max': 3, 'm_l': 2, 'fr_mid': 0.95,
@@ -25,9 +28,15 @@ cdl = {
     68:  {'crop_class': 3, 'h_max': 3, 'm_l': 2, 'fr_mid': 0.95,
           'fr_end': 0.75, 'ls_start': 270, 'ls_stop': 300,
           'name': 'Apples'},
+    71:  {'crop_class': 3, 'h_max': 4, 'm_l': 1.5, 'fr_mid': 0.89,
+          'fr_end': 0.63, 'ls_start': 270, 'ls_stop': 300,
+          'name': 'Other Tree Crops'},
     72:  {'crop_class': 3, 'h_max': 2.5, 'm_l': 1.5, 'fr_mid': 0.71,
           'fr_end': 0.94, 'ls_start': 270, 'ls_stop': 365,
           'name': 'Citrus'},
+    74:  {'crop_class': 3, 'h_max': 4, 'm_l': 1.5, 'fr_mid': 0.89,
+          'fr_end': 0.80, 'ls_start': 270, 'ls_stop': 300,
+          'name': 'Pecans'},
     75:  {'crop_class': 3, 'h_max': 4, 'm_l': 1.5, 'fr_mid': 0.81,
           'fr_end': 0.59, 'ls_start': 270, 'ls_stop': 300,
           'name': 'Almonds'},
@@ -40,24 +49,24 @@ cdl = {
     204: {'crop_class': 3, 'h_max': 3, 'm_l': 1.5, 'fr_mid': 0.81,
           'fr_end': 0.57, 'ls_start': 200, 'ls_stop': 240,
           'name': 'Pistachios'},
+    210: {'crop_class': 3, 'h_max': 3, 'm_l': 1.5, 'fr_mid': 0.95,
+          'fr_end': 0.71, 'ls_start': 270, 'ls_stop': 300,
+          'name': 'Prunes'},
     211: {'crop_class': 3, 'h_max': 4, 'm_l': 1.5, 'fr_mid': 0.48,
           'fr_end': 0.46, 'ls_start': 240, 'ls_stop': 330,
           'name': 'Olives'},
-    # Using citrus coefficient for orange
     212: {'crop_class': 3, 'h_max': 2.5, 'm_l': 1.5, 'fr_mid': 0.71,
           'fr_end': 0.94, 'ls_start': 270, 'ls_stop': 365,
           'name': 'Oranges'},
-    223: {'crop_class': 3, 'h_max': 3, 'm_l': 1.5, 'fr_mid': 1.0,
+    218: {'crop_class': 3, 'h_max': 3, 'm_l': 1.5, 'fr_mid': 0.95,
+          'fr_end': 0.75, 'ls_start': 270, 'ls_stop': 300,
+          'name': 'Nectarines'},
+    220: {'crop_class': 3, 'h_max': 3, 'm_l': 1.5, 'fr_mid': 0.95,
           'fr_end': 0.71, 'ls_start': 270, 'ls_stop': 300,
-          'name': 'Honeydew Melons'},
-
-    # CGM - Should SIMS be computed for all NLCD forest pixels?
-    141: {'crop_class': 3, 'h_max': 4, 'm_l': 1.5, 'fr_mid': 0.88,
-          'fr_end': 0.62, 'ls_start': 270, 'ls_stop': 300,
-          'name': 'Deciduous Forest'},
-    142: {'crop_class': 3, 'h_max': 3, 'm_l': 1.5, 'fr_mid': 0.67,
-          'fr_end': 0.71, 'ls_start': 270, 'ls_stop': 365,
-          'name': 'Evergreen Forest'},
+          'name': 'Plums'},
+    223: {'crop_class': 3, 'h_max': 3, 'm_l': 1.5, 'fr_mid': 0.95,
+          'fr_end': 0.71, 'ls_start': 270, 'ls_stop': 300,
+          'name': 'Apricots'},
 
     # Field crops
     49:  {'crop_class': 1, 'h_max': 0.4, 'm_l': 2, 'fr_mid': 1,
@@ -90,12 +99,18 @@ cdl = {
           'name': 'Watermelons'},
     209: {'crop_class': 1, 'h_max': 0.3, 'm_l': 2, 'fr_mid': 1,
           'name': 'Cantaloupes'},
+    213: {'crop_class': 1, 'h_max': 0.4, 'm_l': 2, 'fr_mid': 1,
+          'name': 'Honeydew Melons'},
     222: {'crop_class': 1, 'h_max': 0.3, 'm_l': 2, 'fr_mid': 1,
           'name': 'Squash'},
     228: {'crop_class': 1, 'h_max': 0.3, 'm_l': 2, 'fr_mid': 1,
-          'name': ''},
+          'name': 'Dbl Crop Triticale/Corn'},
     229: {'crop_class': 1, 'h_max': 0.4, 'm_l': 2, 'fr_mid': 1,
           'name': 'Pumpkins'},
+
+    # Vegetables, other
+    47: {'crop_class': 1, 'h_max': 0.37, 'm_l': 2, 'fr_mid': 1,
+          'name': 'Misc Vegs & Fruits'},
 
     # Roots & tubers
     41:  {'crop_class': 1, 'h_max': 0.5, 'm_l': 2, 'fr_mid': 1,
@@ -110,6 +125,10 @@ cdl = {
     # Legumes
     5:  {'crop_class': 1, 'h_max': 0.5, 'm_l': 2, 'fr_mid': 1,
          'name': 'Soybeans'},
+    10: {'crop_class': 1, 'h_max': 0.4, 'm_l': 2, 'fr_mid': 1,
+         'name': 'Peanuts'},
+    30: {'crop_class': 1, 'h_max': 1.0, 'm_l': 2, 'fr_mid': 1,
+         'name': 'Speltz'},
     42: {'crop_class': 1, 'h_max': 0.4, 'm_l': 2, 'fr_mid': 1,
          'name': 'Dry Beans'},
     51: {'crop_class': 1, 'h_max': 0.4, 'm_l': 2, 'fr_mid': 1,
@@ -118,12 +137,18 @@ cdl = {
          'name': 'Lentils'},
     53: {'crop_class': 1, 'h_max': 0.5, 'm_l': 2, 'fr_mid': 1,
          'name': 'Peas'},
+    224: {'crop_class': 1, 'h_max': 0.5, 'm_l': 2, 'fr_mid': 1,
+          'name': 'Vetch'},
 
-    # Perennial vegetables
+    # Perennial vegetables or fruit
     14:  {'crop_class': 1, 'h_max': 0.7, 'm_l': 2, 'fr_mid': 1,
           'name': 'Mint'},
+    50:  {'crop_class': 1, 'h_max': 0.3, 'm_l': 2, 'fr_mid': 1,
+          'name': 'Cucumbers'},
     207: {'crop_class': 1, 'h_max': 0.5, 'm_l': 2, 'fr_mid': 1,
           'name': 'Asparagus'},
+    216: {'crop_class': 1, 'h_max': 0.7, 'm_l': 2, 'fr_mid': 1,
+          'name': 'Peppers'},
     221: {'crop_class': 1, 'h_max': 0.2, 'm_l': 2, 'fr_mid': 1,
           'name': 'Strawberries'},
 
@@ -138,6 +163,8 @@ cdl = {
          'name': 'Flaxseed'},
     33: {'crop_class': 1, 'h_max': 0.8, 'm_l': 2, 'fr_mid': 1,
          'name': 'Safflower'},
+    45: {'crop_class': 1, 'h_max': 3.0, 'm_l': 2, 'fr_mid': 1,
+         'name': 'Sugarcane'},
 
     # Cereal
     1:  {'crop_class': 1, 'h_max': 2.0, 'm_l': 2, 'fr_mid': 1,
@@ -148,17 +175,32 @@ cdl = {
          'name': 'Sweet Corn'},
     21: {'crop_class': 1, 'h_max': 1.0, 'm_l': 2, 'fr_mid': 1,
          'name': 'Barley'},
+    22: {'crop_class': 1, 'h_max': 1.0, 'm_l': 2, 'fr_mid': 1,
+         'name': 'Durum Wheat'},
     23: {'crop_class': 1, 'h_max': 1.0, 'm_l': 2, 'fr_mid': 1,
          'name': 'Spring Wheat'},
     24: {'crop_class': 1, 'h_max': 1.0, 'm_l': 2, 'fr_mid': 1,
          'name': 'Winter Wheat'},
+    25: {'crop_class': 1, 'h_max': 1.0, 'm_l': 2, 'fr_mid': 1,
+         'name': 'Other Small Grains'},
+    26: {'crop_class': 1, 'h_max': 1.0, 'm_l': 2, 'fr_mid': 1,
+         'name': 'Dbl Crop WinWht/Soybeans''},
     28: {'crop_class': 1, 'h_max': 1.0, 'm_l': 2, 'fr_mid': 1,
          'name': 'Oats'},
     29: {'crop_class': 1, 'h_max': 1.5, 'm_l': 2, 'fr_mid': 1,
          'name': 'Millet'},
+    32: {'crop_class': 1, 'h_max': 1.2, 'm_l': 2, 'fr_mid': 1,
+         'name': 'Flaxseed'},
+    34: {'crop_class': 1, 'h_max': 0.6, 'm_l': 2, 'fr_mid': 1,
+         'name': 'Rape Seed'},
+    35: {'crop_class': 1, 'h_max': 1.0, 'm_l': 2, 'fr_mid': 1,
+         'name': 'Mustard'},
+    39: {'crop_class': 1, 'h_max': 1.0, 'm_l': 2, 'fr_mid': 1,
+         'name': 'Buckwheat'},
+    56: {'crop_class': 1, 'h_max': 5.0, 'm_l': 2, 'fr_mid': 1,
+         'name': 'Hops'},
 
     # Rice
-    # CGM - Changed to clop_class 5
     3: {'crop_class': 5, 'h_max': 1.0, 'm_l': 2, 'fr_mid': 1,
         'name': 'Rice'},
 
@@ -169,43 +211,21 @@ cdl = {
          'name': 'Alfalfa'},
     58: {'crop_class': 1, 'h_max': 0.6, 'm_l': 2, 'fr_mid': 1,
          'name': 'Clover/Wildflowers'},
-    # CGM - 62 is not a valid CDL code, should this be 61?
-    #   If this is changed, make sure to comment out entry for 61 below
-    # 62: {'crop_class': 1, 'h_max': 0.2, 'm_l': 2, 'fr_mid': 1, 'name': ''},
-
-    # Duplicating grazing pasture as pasture/hay
-    # 181: {'crop_class': 1, 'h_max': 0.2, 'm_l': 2, 'fr_mid': 1, 'name': },
-    # Duplicating Other Hay/Non Alfalfa as pasture/hay
-    # 37: {'crop_class': 1, 'h_max': 0.2, 'm_l': 2, 'fr_mid': 1, 'name': }),
+    37: {'crop_class': 1, 'h_max': 0.5, 'm_l': 2, 'fr_mid': 1, 'name': 'Other Hay/Non Alfalfa'}),
+    38: {'crop_class': 1, 'h_max': 1.0, 'm_l': 2, 'fr_mid': 1,
+         'name': 'Camelina'},
+    205: {'crop_class': 1, 'h_max': 0.65, 'm_l': 2, 'fr_mid': 1,
+          'name': 'Triticale'},
 
     # Crops without custom coefficients
-    10: {'crop_class': 1, 'name': 'Peanuts'},
     11: {'crop_class': 1, 'name': 'Tobacco'},
     13: {'crop_class': 1, 'name': 'Pop or Orn Corn'},
-    22: {'crop_class': 1, 'name': 'Durum Wheat'},
-    25: {'crop_class': 1, 'name': 'Other Small Grains'},
-    26: {'crop_class': 1, 'name': 'Dbl Crop WinWht/Soybeans'},
-    30: {'crop_class': 1, 'name': 'Speltz'},
-    32: {'crop_class': 1, 'name': 'Flaxseed'},
-    34: {'crop_class': 1, 'name': 'Rape Seed'},
-    35: {'crop_class': 1, 'name': 'Mustard'},
-    37: {'crop_class': 1, 'name': 'Other Hay/Non Alfalfa'},
-    38: {'crop_class': 1, 'name': 'Camelina'},
-    39: {'crop_class': 1, 'name': 'Buckwheat'},
     44: {'crop_class': 1, 'name': 'Other Crops'},
-    45: {'crop_class': 1, 'name': 'Sugarcane'},
-    47: {'crop_class': 1, 'name': 'Misc Vegs & Fruits'},
-    50: {'crop_class': 1, 'name': 'Cucumbers'},
     55: {'crop_class': 1, 'name': 'Caneberries'},
-    56: {'crop_class': 1, 'name': 'Hops'},
     57: {'crop_class': 1, 'name': 'Herbs'},
     59: {'crop_class': 1, 'name': 'Sod/Grass Seed'},
     61: {'crop_class': 1, 'name': 'Fallow/Idle Cropland'},
-    205: {'crop_class': 1, 'name': 'Triticale'},
-    213: {'crop_class': 1, 'name': 'Honeydew Melons'},
-    216: {'crop_class': 1, 'name': 'Peppers'},
     219: {'crop_class': 1, 'name': 'Greens'},
-    224: {'crop_class': 1, 'name': 'Vetch'},
     225: {'crop_class': 1, 'name': 'Dbl Crop WinWht/Corn'},
     226: {'crop_class': 1, 'name': 'Dbl Crop Oats/Corn'},
     230: {'crop_class': 1, 'name': 'Dbl Crop Lettuce/Durum Wht'},
@@ -227,12 +247,5 @@ cdl = {
 
     # Tree crops without custom coefficients
     70: {'crop_class': 3, 'name': 'Christmas Trees'},
-    71: {'crop_class': 3, 'name': 'Other Tree Crops'},
-    74: {'crop_class': 3, 'name': 'Pecans'},
-    210: {'crop_class': 3, 'name': 'Prunes'},
-    # CGM - There are no Avocado pixels in the 2015-2018 CDL
-    # 215: {'crop_class': 3, 'name': 'Avocados'},
-    217: {'crop_class': 3, 'name': 'Pomegranates'},
-    218: {'crop_class': 3, 'name': 'Nectarines'},
-    220: {'crop_class': 3, 'name': 'Plums'},
+    217: {'crop_class': 3, 'name': 'Pomegranates'}
 }
