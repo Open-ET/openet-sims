@@ -180,10 +180,13 @@ def test_Model_crop_data_image(crop_type, parameter):
 @pytest.mark.parametrize(
     'crop_type, expected',
     [
-        [1, 1],
-        [69, 2],
-        [66, 3],
-        [3, 5],  # Rice was switched to class 5 instead of 1
+        [54, 1], # Tomatoes
+        [69, 2], # Vineyards
+        [66, 3], # Cherries (trees)
+        [3, 5],  # Rice
+        # CGM - Using a higher number crop for this test to avoid confusion
+        #   between the crop code and crop class
+        [21, 6],  # Barley (annuals?)
     ]
 )
 def test_Model_crop_class_constant_value(crop_type, expected):
@@ -427,7 +430,7 @@ def test_Model_kc_crop_type_kc_class_1(crop_type_kc_flag, crop_type_annual_skip_
     the crop_type_kc_flag is True and the crop_type_annual_skip_flag is False.
     Otherwise, just use the generic row crop kc function.
     """
-    m = default_model_obj(crop_type_source=1, crop_type_kc_flag=crop_type_kc_flag,
+    m = default_model_obj(crop_type_source=54, crop_type_kc_flag=crop_type_kc_flag,
                           crop_type_annual_skip_flag=crop_type_annual_skip_flag)
     output = utils.constant_image_value(m.kc(ndvi=ee.Image.constant(0.5)))
     if crop_type_kc_flag and not crop_type_annual_skip_flag:
@@ -476,6 +479,30 @@ def test_Model_kc_crop_type_kc_class_3(crop_type_kc_flag):
 
 
 @pytest.mark.parametrize(
+    'crop_type_kc_flag',
+    [
+        False,
+        True,
+    ]
+)
+def test_Model_kc_crop_type_kc_class_6(crop_type_kc_flag):
+    """"Test that custom crop coefficients for annual crops are only used if
+    the crop_type_kc_flag is True.  Otherwise, just use the generic row crop kc
+    function.
+    """
+    m = default_model_obj(crop_type_source=21, crop_type_kc_flag=crop_type_kc_flag)
+    output = utils.constant_image_value(m.kc(ndvi=ee.Image.constant(0.5)))
+    if crop_type_kc_flag:
+        expected = utils.constant_image_value(
+            m._kcb(m._kd_row_crop(fc=ee.Image.constant(0.45))))
+        assert output['kc'] == expected['kcb']
+    else:
+        expected = utils.constant_image_value(
+            m.kc_row_crop(fc=ee.Image.constant(0.45)))
+        assert output['kc'] == expected['kc']
+
+
+@pytest.mark.parametrize(
     'crop_type_source, expected',
     [
         # Wine grapes don't hit clamp value
@@ -512,7 +539,7 @@ def ndvi_to_kc_point(ndvi, doy, crop_type):
 
     fc = min(max((1.26 * ndvi) - 0.18, 0), 1)
     # print(crop_profile['crop_class'])
-    if crop_profile['crop_class'] == 1:
+    if crop_profile['crop_class'] == 1 or crop_profile['crop_class'] == 6:
         h = crop_profile['h_max'] * min((fc / 0.7), 1)
         fr = 1.0
     elif crop_profile['crop_class'] == 3 or crop_profile['crop_class'] == 2:
@@ -551,6 +578,7 @@ def ndvi_to_kc_point(ndvi, doy, crop_type):
     return kcb
 
 
+# CGM - What is the purpose of this test?
 @pytest.mark.parametrize(
     'ndvi, doy, crop_type_num',
     [
