@@ -123,7 +123,7 @@ cdl = {
           'name': 'Turnips'},
 
     # Legumes
-    5:  {'crop_class': 1, 'h_max': 0.5, 'm_l': 2, 'fr_mid': 1,
+    5:  {'crop_class': 6, 'h_max': 0.5, 'm_l': 2, 'fr_mid': 1,
          'name': 'Soybeans'},
     10: {'crop_class': 1, 'h_max': 0.4, 'm_l': 2, 'fr_mid': 1,
          'name': 'Peanuts'},
@@ -153,7 +153,7 @@ cdl = {
           'name': 'Strawberries'},
 
     # Fiber
-    2:  {'crop_class': 1, 'h_max': 1.35, 'm_l': 2, 'fr_mid': 1,
+    2:  {'crop_class': 6, 'h_max': 1.35, 'm_l': 2, 'fr_mid': 1,
          'name': 'Cotton'},
     6:  {'crop_class': 1, 'h_max': 2.0, 'm_l': 2, 'fr_mid': 1,
          'name': 'Sunflower'},
@@ -167,23 +167,23 @@ cdl = {
          'name': 'Sugarcane'},
 
     # Cereal
-    1:  {'crop_class': 1, 'h_max': 2.0, 'm_l': 2, 'fr_mid': 1,
+    1:  {'crop_class': 6, 'h_max': 2.0, 'm_l': 2, 'fr_mid': 1,
          'name': 'Corn'},
-    4:  {'crop_class': 1, 'h_max': 1.5, 'm_l': 2, 'fr_mid': 1,
+    4:  {'crop_class': 6, 'h_max': 1.5, 'm_l': 2, 'fr_mid': 1,
          'name': 'Sorghum'},
     12: {'crop_class': 1, 'h_max': 1.5, 'm_l': 2, 'fr_mid': 1,
          'name': 'Sweet Corn'},
-    21: {'crop_class': 1, 'h_max': 1.0, 'm_l': 2, 'fr_mid': 1,
+    21: {'crop_class': 6, 'h_max': 1.0, 'm_l': 2, 'fr_mid': 1,
          'name': 'Barley'},
-    22: {'crop_class': 1, 'h_max': 1.0, 'm_l': 2, 'fr_mid': 1,
+    22: {'crop_class': 6, 'h_max': 1.0, 'm_l': 2, 'fr_mid': 1,
          'name': 'Durum Wheat'},
-    23: {'crop_class': 1, 'h_max': 1.0, 'm_l': 2, 'fr_mid': 1,
+    23: {'crop_class': 6, 'h_max': 1.0, 'm_l': 2, 'fr_mid': 1,
          'name': 'Spring Wheat'},
-    24: {'crop_class': 1, 'h_max': 1.0, 'm_l': 2, 'fr_mid': 1,
+    24: {'crop_class': 6, 'h_max': 1.0, 'm_l': 2, 'fr_mid': 1,
          'name': 'Winter Wheat'},
-    25: {'crop_class': 1, 'h_max': 1.0, 'm_l': 2, 'fr_mid': 1,
+    25: {'crop_class': 6, 'h_max': 1.0, 'm_l': 2, 'fr_mid': 1,
          'name': 'Other Small Grains'},
-    26: {'crop_class': 1, 'h_max': 1.0, 'm_l': 2, 'fr_mid': 1,
+    26: {'crop_class': 6, 'h_max': 1.0, 'm_l': 2, 'fr_mid': 1,
          'name': 'Dbl Crop WinWht/Soybeans'},
     28: {'crop_class': 1, 'h_max': 1.0, 'm_l': 2, 'fr_mid': 1,
          'name': 'Oats'},
@@ -218,6 +218,16 @@ cdl = {
     205: {'crop_class': 1, 'h_max': 0.65, 'm_l': 2, 'fr_mid': 1,
           'name': 'Triticale'},
 
+    # using the soybeans coefficients
+    239: {'crop_class': 6, 'h_max': 0.5, 'm_l': 2, 'fr_mid': 1,
+          'name': 'Dbl Crop Soybeans/Cotton'},
+    240: {'crop_class': 6, 'h_max': 0.5, 'm_l': 2, 'fr_mid': 1,
+          'name': 'Dbl Crop Soybeans/Oats'},
+
+    # Based on avg equation
+    241: {'crop_class': 6, 'h_max': 1.375, 'm_l': 2, 'fr_mid': 1,
+          'name': 'Dbl Crop Corn/Soybeans'},
+
     # Crops without custom coefficients
     11: {'crop_class': 1, 'name': 'Tobacco'},
     13: {'crop_class': 1, 'name': 'Pop or Orn Corn'},
@@ -238,9 +248,6 @@ cdl = {
     236: {'crop_class': 1, 'name': 'Dbl Crop WinWht/Sorghum'},
     237: {'crop_class': 1, 'name': 'Dbl Crop Barley/Corn'},
     238: {'crop_class': 1, 'name': 'Dbl Crop WinWht/Cotton'},
-    239: {'crop_class': 1, 'name': 'Dbl Crop Soybeans/Cotton'},
-    240: {'crop_class': 1, 'name': 'Dbl Crop Soybeans/Oats'},
-    241: {'crop_class': 1, 'name': 'Dbl Crop Corn/Soybeans'},
     242: {'crop_class': 1, 'name': 'Blueberries'},
     249: {'crop_class': 1, 'name': 'Gourds'},
     250: {'crop_class': 1, 'name': 'Cranberries'},

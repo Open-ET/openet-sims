@@ -163,6 +163,7 @@ class Model():
                       self._kcb(self._kd_vine(fc)).clamp(0, 1.1))
         kc = kc.where(self.crop_class.eq(3), self.kc_tree(fc))
         kc = kc.where(self.crop_class.eq(5), self.kc_rice(fc, ndvi))
+        kc = kc.where(self.crop_class.eq(6), self.kc_row_crop(fc))
 
         if self.crop_type_kc_flag:
             # Apply crop type specific Kc functions
@@ -172,6 +173,10 @@ class Model():
             if not self.crop_type_annual_skip_flag:
                 kc = kc.where(self.crop_class.eq(1).And(self.h_max.gte(0)),
                               self._kcb(self._kd_row_crop(fc)))
+
+            # For annuals with crop_class 6 we want to use the crop specific equations
+            kc = kc.where(self.crop_class.eq(6).And(self.h_max.gte(0)),
+                          self._kcb(self._kd_row_crop(fc)))
 
             kc = kc.where(self.crop_class.eq(3).And(self.h_max.gte(0)),
                           self._kcb(self._kd_tree(fc)).clamp(0, 1.2))
