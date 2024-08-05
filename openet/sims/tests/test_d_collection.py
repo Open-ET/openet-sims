@@ -12,6 +12,7 @@ import openet.sims.utils as utils
 C02_COLLECTIONS = ['LANDSAT/LC08/C02/T1_L2', 'LANDSAT/LE07/C02/T1_L2']
 # Image LE07_044033_20170724 is not (yet?) in LANDSAT/LE07/C02/T1_L2
 C02_SCENE_ID_LIST = ['LC08_044033_20170716', 'LE07_044033_20170708']
+# SENTINEL2_SCENE_ID_LIST = ['20170510T184921_20170510T185915_T10SEJ']
 START_DATE = '2017-07-01'
 END_DATE = '2017-08-01'
 SCENE_GEOM = (-121.91, 38.99, -121.89, 39.01)
@@ -94,6 +95,7 @@ def test_Collection_init_cloud_cover_max_str():
         ['LANDSAT/LE07/C02/T1_L2', '2022-01-01', '2023-01-01'],
         ['LANDSAT/LC08/C02/T1_L2', '2012-01-01', '2013-01-01'],
         ['LANDSAT/LC09/C02/T1_L2', '2021-01-01', '2022-01-01'],
+        ['COPERNICUS/S2_SR_HARMONIZED', '2000-01-01', '2001-01-01'],
     ]
 )
 def test_Collection_init_collection_filter(coll_id, start_date, end_date):
@@ -188,23 +190,27 @@ def test_Collection_build_dates():
 
 
 def test_Collection_build_landsat_c2_sr():
-    """Test if the Landsat SR collections can be built"""
+    """Test if the Landsat Collection 2 SR collections can be built"""
     coll_obj = default_coll_obj(collections=['LANDSAT/LC08/C02/T1_L2', 'LANDSAT/LE07/C02/T1_L2'])
     output = utils.getinfo(coll_obj._build())
     assert parse_scene_id(output) == C02_SCENE_ID_LIST
     assert {y['id'] for x in output['features'] for y in x['bands']} == VARIABLES
 
 
-# CGM - Non Landsat SR collections not currently supported
-# def test_Collection_build_sentinel_toa():
-#     """Test if the Sentinel 2 TOA collections can be built"""
-#     coll_obj = default_coll_obj(
-#         collections=['COPERNICUS/S2'], start_date='2017-05-01',
-#         end_date='2017-05-15')
-#     output = utils.getinfo(coll_obj._build())
-#     expected = ['20170510T184921_20170510T185915_T10SEJ']
-#     assert parse_scene_id(output) == expected
-#     assert {y['id'] for x in output['features'] for y in x['bands']} == VARIABLES
+def test_Collection_build_sentinel2_sr():
+    """Test if the Sentinel 2 SR collections can be built"""
+    coll_obj = default_coll_obj(
+        collections=['COPERNICUS/S2_SR_HARMONIZED'],
+        start_date='2020-07-01', end_date='2020-07-15',
+    )
+    output = utils.getinfo(coll_obj._build())
+    expected = [
+        '20200703T184921_20200703T185812_T10SEJ',
+        '20200708T184919_20200708T185408_T10SEJ',
+        '20200713T184921_20200713T185725_T10SEJ',
+    ]
+    assert parse_scene_id(output) == expected
+    assert {y['id'] for x in output['features'] for y in x['bands']} == VARIABLES
 
 
 def test_Collection_build_exclusive_enddate():
@@ -422,29 +428,25 @@ def test_Collection_interpolate_t_interval_custom():
 def test_Collection_interpolate_et_reference_source_not_set():
     """Test if Exception is raised if et_reference_source is not set"""
     with pytest.raises(ValueError):
-        utils.getinfo(default_coll_obj(
-            et_reference_source=None, model_args={}).interpolate())
+        utils.getinfo(default_coll_obj(et_reference_source=None, model_args={}).interpolate())
 
 
 def test_Collection_interpolate_et_reference_band_not_set():
     """Test if Exception is raised if et_reference_band is not set"""
     with pytest.raises(ValueError):
-        utils.getinfo(default_coll_obj(
-            et_reference_band=None, model_args={}).interpolate())
+        utils.getinfo(default_coll_obj(et_reference_band=None, model_args={}).interpolate())
 
 
 def test_Collection_interpolate_et_reference_factor_not_set():
     """Test if Exception is raised if et_reference_factor is not set"""
     with pytest.raises(ValueError):
-        utils.getinfo(default_coll_obj(
-            et_reference_factor=None, model_args={}).interpolate())
+        utils.getinfo(default_coll_obj(et_reference_factor=None, model_args={}).interpolate())
 
 
 def test_Collection_interpolate_et_reference_factor_exception():
     """Test if Exception is raised if et_reference_factor is not a number or negative"""
     with pytest.raises(ValueError):
-        utils.getinfo(default_coll_obj(
-            et_reference_factor=-1, model_args={}).interpolate())
+        utils.getinfo(default_coll_obj(et_reference_factor=-1, model_args={}).interpolate())
 
 
 def test_Collection_interpolate_et_reference_resample_exception():
@@ -624,6 +626,7 @@ def test_Collection_interpolate_model_properties():
     'collections, scene_id_list',
     [
         [['LANDSAT/LC08/C02/T1_L2', 'LANDSAT/LE07/C02/T1_L2'], C02_SCENE_ID_LIST],
+        # [['COPERNICUS/S2_SR_HARMONIZED'], SENTINEL2_SCENE_ID_LIST],
     ]
 )
 def test_Collection_get_image_ids(collections, scene_id_list):

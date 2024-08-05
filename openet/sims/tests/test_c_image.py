@@ -439,10 +439,64 @@ def test_Image_from_landsat_c2_sr_cloud_score_mask_arg():
     assert type(output) == type(default_image_obj())
 
 
+# def test_Image_from_sentinel2_sr_default_image():
+#     """Test that the classmethod is returning a class object"""
+#     output = sims.Image.from_sentinel2_sr(input_image())
+#     assert type(output) == type(default_image_obj())
+
+
+@pytest.mark.parametrize(
+    'image_id',
+    [
+        'COPERNICUS/S2_SR_HARMONIZED/20200703T184921_20200703T185812_T10SEJ',
+    ]
+)
+def test_Image_from_sentinel2_sr_image_id(image_id):
+    """Test instantiating the class from a Sentinel2 image ID"""
+    output = utils.getinfo(sims.Image.from_sentinel2_sr(image_id).ndvi)
+    assert output['properties']['system:index'] == image_id.split('/')[-1]
+
+
+def test_Image_from_sentinel2_sr_image():
+    """Test instantiating the class from a Sentinel2 ee.Image"""
+    image_id = 'COPERNICUS/S2_SR_HARMONIZED/20200703T184921_20200703T185812_T10SEJ'
+    output = utils.getinfo(sims.Image.from_sentinel2_sr(ee.Image(image_id)).ndvi)
+    assert output['properties']['system:index'] == image_id.split('/')[-1]
+
+
+def test_Image_from_sentinel2_sr_kc():
+    """Test if ET fraction can be built from a Landsat images"""
+    image_id = 'COPERNICUS/S2_SR_HARMONIZED/20200703T184921_20200703T185812_T10SEJ'
+    output = utils.getinfo(sims.Image.from_sentinel2_sr(image_id).kc)
+    assert output['properties']['system:index'] == image_id.split('/')[-1]
+
+
+def test_Image_from_sentinel2_sr_et():
+    """Test if ET can be built from a Landsat images"""
+    image_id = 'COPERNICUS/S2_SR_HARMONIZED/20200703T184921_20200703T185812_T10SEJ'
+    output = utils.getinfo(sims.Image.from_sentinel2_sr(
+        image_id, et_reference_source='IDAHO_EPSCOR/GRIDMET', et_reference_band='etr').et)
+    assert output['properties']['system:index'] == image_id.split('/')[-1]
+
+
+def test_Image_from_sentinel2_sr_exception():
+    """Test that an Exception is raise for an invalid image ID"""
+    with pytest.raises(Exception):
+        # Intentionally using .getInfo() since utils.getinfo() will catch the exception
+        sims.Image.from_sentinel2_sr(ee.Image('FOO')).ndvi.getInfo()
+
+
+def test_Image_from_sentinel2_sr_reflectance_type():
+    """Test if reflectance_type property is being set"""
+    image_id = 'COPERNICUS/S2_SR_HARMONIZED/20200703T184921_20200703T185812_T10SEJ'
+    assert sims.Image.from_sentinel2_sr(image_id).reflectance_type == 'SR'
+
+
 @pytest.mark.parametrize(
     'image_id',
     [
         'LANDSAT/LC08/C02/T1_L2/LC08_044033_20170716',
+        'COPERNICUS/S2_SR_HARMONIZED/20200703T184921_20200703T185812_T10SEJ',
     ]
 )
 def test_Image_from_image_id(image_id):

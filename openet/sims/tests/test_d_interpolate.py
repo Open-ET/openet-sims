@@ -414,12 +414,18 @@ def test_daily_ke(synth_test_imgs, synth_precip_imgs):
         synth_test_imgs,
         # CGM - model_args isn't used by daily_ke function and could be removed
         model_args={},
-        precip_source=synth_precip_imgs, precip_band='pr',
-        # precip_source='IDAHO_EPSCOR/GRIDMET', precip_band='pr',
+        precip_source=synth_precip_imgs,
+        precip_band='pr',
+        # precip_source='IDAHO_EPSCOR/GRIDMET',
+        # precip_band='pr',
         fc_source='projects/eeflux/soils/gsmsoil_mu_a_fc_10cm_albers_100',
         fc_band='b1',
         wp_source='projects/eeflux/soils/gsmsoil_mu_a_wp_10cm_albers_100',
         wp_band='b1',
+        # fc_source='projects/openet/assets/soils/ancillary/gsmsoil_mu_a_fc_10cm_albers_100',
+        # wp_source='projects/openet/assets/soils/ancillary/gsmsoil_mu_a_wp_10cm_albers_100',
+        # fc_band='fc',
+        # wp_band='wp',
     )
 
     base_ts = utils.point_coll_value(synth_test_imgs, TEST_POINT, scale=30)

@@ -260,7 +260,7 @@ class Image():
         ee.Image
 
         """
-        # Map the the crop class values to the NDVI image
+        # Map the crop class values to the NDVI image
         return (
             self.ndvi.multiply(0).add(self.model.crop_class)
             .rename('crop_class').set(self._properties)
@@ -275,7 +275,7 @@ class Image():
         ee.Image
 
         """
-        # Map the the crop class values to the NDVI image
+        # Map the crop class values to the NDVI image
         # Crop type image ID property is set in model function
         return self.ndvi.multiply(0).add(self.model.crop_type).rename(['crop_type'])
 
@@ -331,8 +331,10 @@ class Image():
     # @lazy_property
     # def quality(self):
     #     """Set quality to 1 for all active pixels (for now)"""
-    #     return self.mask\
+    #     return (
+    #         self.mask
     #         .rename(['quality']).set(self._properties)
+    #     )
 
     @lazy_property
     def time(self):
@@ -376,6 +378,8 @@ class Image():
             'LANDSAT/LE07/C02/T1_L2': 'from_landsat_c2_sr',
             'LANDSAT/LT05/C02/T1_L2': 'from_landsat_c2_sr',
             'LANDSAT/LT04/C02/T1_L2': 'from_landsat_c2_sr',
+            'COPERNICUS/S2_SR_HARMONIZED': 'from_sentinel2_sr',
+            # 'COPERNICUS/S2_SR': 'from_sentinel2_sr',
         }
 
         try:
@@ -459,6 +463,58 @@ class Image():
             cloudmask_args['saturated_flag'] = False
 
         cloud_mask = openet.core.common.landsat_c2_sr_cloud_mask(sr_image, **cloudmask_args)
+
+        # Build the input image
+        # Eventually send the QA band or a cloud mask through also
+        input_image = ee.Image([cls._ndvi(prep_image)])
+
+        # Apply the cloud mask and add properties
+        input_image = (
+            input_image
+            .updateMask(cloud_mask)
+            .set({
+                'system:index': sr_image.get('system:index'),
+                'system:time_start': sr_image.get('system:time_start'),
+                'system:id': sr_image.get('system:id'),
+            })
+        )
+
+        return cls(input_image, reflectance_type='SR', **kwargs)
+
+    @classmethod
+    def from_sentinel2_sr(cls, sr_image, cloudmask_args={}, **kwargs):
+        """Construct a SIMS Image instance from a Sentinel 2 Level 2 (SR) image
+
+        Parameters
+        ----------
+        sr_image : ee.Image, str
+            A raw Sentinel 2 Level 2 (SR) image or image ID.
+        cloudmask_args : dict
+            keyword arguments to pass through to cloud mask function
+        kwargs : dict
+            Keyword arguments to pass through to model init.
+
+        Returns
+        -------
+        new instance of Image class
+
+        """
+        sr_image = ee.Image(sr_image)
+
+        # Rename bands to generic names
+        input_bands = ['B2', 'B3', 'B4', 'B8', 'B11', 'B12']
+        output_bands = ['blue', 'green', 'red', 'nir', 'swir1', 'swir2']
+        prep_image = sr_image.select(input_bands, output_bands).divide(10000)
+
+        # Read in Cloud Score+ Image Collection
+        clear_threshold = 0.60
+        cloud_mask = (
+            ee.ImageCollection('GOOGLE/CLOUD_SCORE_PLUS/V1/S2_HARMONIZED')
+            .filterMetadata('system:index', 'equals', ee.String(sr_image.get('system:index')))
+            .first()
+            .select(['cs'])
+            .gte(clear_threshold)
+        )
 
         # Build the input image
         # Eventually send the QA band or a cloud mask through also

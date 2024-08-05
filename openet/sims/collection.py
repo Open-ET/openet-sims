@@ -147,6 +147,9 @@ class Collection():
             'LANDSAT/LC08/C02/T1_L2',
             'LANDSAT/LC09/C02/T1_L2',
         ]
+        self._sentinel2_sr_collections = [
+            'COPERNICUS/S2_SR_HARMONIZED',
+        ]
 
         # If collections is a string, place in a list
         if type(self.collections) is str:
@@ -154,16 +157,9 @@ class Collection():
 
         # Check that collection IDs are supported
         for coll_id in self.collections:
-            if coll_id not in self._landsat_c2_sr_collections:
+            if (coll_id not in self._landsat_c2_sr_collections and
+                    coll_id not in self._sentinel2_sr_collections):
                 raise ValueError(f'unsupported collection: {coll_id}')
-
-        # CGM - This test is not needed since only Landsat SR collections are supported
-        # # Check that collections don't have "duplicates"
-        # #   (i.e TOA and SR or TOA and TOA_RT for same Landsat)
-        # def duplicates(x):
-        #     return len(x) != len(set(x))
-        # if duplicates([c.split('/')[1] for c in self.collections]):
-        #     raise ValueError('duplicate landsat types in collection list')
 
         # Check start/end date
         if not utils.valid_date(self.start_date):
@@ -205,8 +201,9 @@ class Collection():
             self.collections = [c for c in self.collections if 'LC08' not in c]
         if self.end_date <= '2022-01-01':
             self.collections = [c for c in self.collections if 'LC09' not in c]
-        # if self.end_date <= '2015-01-01':
-        #     self.collections = [c for c in self.collections if 'COPERNICUS' not in c]
+        # There is only partial Sentinel 2 SR coverage of the United States before 2019
+        if self.end_date <= '2018-01-01':
+            self.collections = [c for c in self.collections if 'COPERNICUS/S2' not in c]
 
     def _build(self, variables=None, start_date=None, end_date=None):
         """Build a merged model variable image collection
@@ -309,11 +306,64 @@ class Collection():
                     return model_obj.calculate(variables)
 
                 # Skip going into image class if variables is not set so raw
-                #   landsat collection can be returned for getting image_id_list
+                #   input collection can be returned for getting image_id_list
                 if variables:
                     input_coll = ee.ImageCollection(input_coll.map(compute_vars))
 
                 variable_coll = variable_coll.merge(input_coll)
+
+            elif coll_id in self._sentinel2_sr_collections:
+                input_coll = (
+                    ee.ImageCollection(coll_id)
+                    .filterDate(start_date, end_date)
+                    .filterBounds(self.geometry)
+                    .filterMetadata('CLOUDY_PIXEL_PERCENTAGE', 'less_than', self.cloud_cover_max)
+                    #.filterMetadata('CLOUDY_PIXEL_PERCENTAGE', 'greater_than', -0.5)
+                )
+
+                # TODO: Check if any extra filtering support is needed
+                # # TODO: Move this to a separate function (maybe in utils.py?)
+                # #   since it is identical for all the supported collections
+                # if (self.filter_args is None or
+                #         not isinstance(self.filter_args, dict) or
+                #         coll_id not in self.filter_args.keys()):
+                #     pass
+                # elif isinstance(self.filter_args[coll_id], ee.ComputedObject):
+                #     input_coll = input_coll.filter(self.filter_args[coll_id])
+                # elif isinstance(self.filter_args[coll_id], list):
+                #     # TODO: This generic dictionary based filtering should
+                #     #   probably be removed since only the "equals" filter
+                #     #   has been implemented and the functionality is better
+                #     #   handled with the other approach.
+                #     for f in copy.deepcopy(self.filter_args[coll_id]):
+                #         try:
+                #             filter_type = f.pop('type')
+                #         except KeyError:
+                #             continue
+                #         if filter_type.lower() == 'equals':
+                #             input_coll = input_coll.filter(ee.Filter.equals(**f))
+                # else:
+                #     raise ValueError('Unsupported filter_arg parameter')
+
+                # # TODO: Add any necessary time filters
+                # # Time filters are to remove bad (L5) and pre-op (L8) images
+                # if 'LT05' in coll_id:
+                #     input_coll = input_coll.filter(ee.Filter.lt(
+                #         'system:time_start', ee.Date('2011-12-31').millis()
+                #     ))
+
+                def compute_vars(image):
+                    model_obj = Image.from_sentinel2_sr(
+                        sr_image=ee.Image(image), **self.model_args
+                    )
+                    return model_obj.calculate(variables)
+
+                # Skip going into image class if variables is not set so raw
+                #   input collection can be returned for getting image_id_list
+                if variables:
+                    variable_coll = ee.ImageCollection(input_coll.map(compute_vars))
+                else:
+                    variable_coll = input_coll
 
             else:
                 raise ValueError(f'unsupported collection: {coll_id}')

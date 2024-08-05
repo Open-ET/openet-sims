@@ -523,6 +523,10 @@ def daily_ke(
         fc_band='b1',
         wp_source='projects/eeflux/soils/gsmsoil_mu_a_wp_10cm_albers_100',
         wp_band='b1',
+        # fc_source='projects/openet/assets/soils/ancillary/gsmsoil_mu_a_fc_10cm_albers_100',
+        # fc_band='fc',
+        # wp_source='projects/openet/assets/soils/ancillary/gsmsoil_mu_a_wp_10cm_albers_100',
+        # wp_band='wp',
         **kwargs
         ):
     """Compute daily Ke values by simulating evaporable zone water balance

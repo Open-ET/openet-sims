@@ -1,6 +1,6 @@
 [project]
 name = "openet-sims"
-version = "0.2.2"
+version = "0.3.0"
 authors = [
     { name = "Alberto Guzman", email = "aguzman@csumb.edu" },
 ]
