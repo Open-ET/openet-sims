@@ -157,8 +157,8 @@ class Collection():
 
         # Check that collection IDs are supported
         for coll_id in self.collections:
-            if (coll_id not in self._landsat_c2_sr_collections and
-                    coll_id not in self._sentinel2_sr_collections):
+            if ((coll_id not in self._landsat_c2_sr_collections) and
+                    (coll_id not in self._sentinel2_sr_collections)):
                 raise ValueError(f'unsupported collection: {coll_id}')
 
         # Check start/end date
@@ -170,14 +170,14 @@ class Collection():
             raise ValueError('end_date must be after start_date')
 
         # Check cloud_cover_max
-        if (not type(self.cloud_cover_max) is int and
-                not type(self.cloud_cover_max) is float and
-                not utils.is_number(self.cloud_cover_max)):
+        if ((type(self.cloud_cover_max) is not int) and
+                (type(self.cloud_cover_max) is not float) and
+                not (utils.is_number(self.cloud_cover_max))):
             raise TypeError('cloud_cover_max must be a number')
-        if (type(self.cloud_cover_max) is str and
+        if ((type(self.cloud_cover_max) is str) and
                 utils.is_number(self.cloud_cover_max)):
             self.cloud_cover_max = float(self.cloud_cover_max)
-        if self.cloud_cover_max < 0 or self.cloud_cover_max > 100:
+        if (self.cloud_cover_max < 0) or (self.cloud_cover_max > 100):
             raise ValueError('cloud_cover_max must be in the range 0 to 100')
 
         # Check geometry?
@@ -260,9 +260,9 @@ class Collection():
 
                 # TODO: Move this to a separate function (maybe in utils.py?)
                 #   since it is identical for all the supported collections
-                if (self.filter_args is None or
-                        not isinstance(self.filter_args, dict) or
-                        coll_id not in self.filter_args.keys()):
+                if ((self.filter_args is None) or
+                        (not isinstance(self.filter_args, dict)) or
+                        (coll_id not in self.filter_args.keys())):
                     pass
                 elif isinstance(self.filter_args[coll_id], ee.ComputedObject):
                     input_coll = input_coll.filter(self.filter_args[coll_id])
@@ -324,9 +324,9 @@ class Collection():
                 # TODO: Check if any extra filtering support is needed
                 # # TODO: Move this to a separate function (maybe in utils.py?)
                 # #   since it is identical for all the supported collections
-                # if (self.filter_args is None or
-                #         not isinstance(self.filter_args, dict) or
-                #         coll_id not in self.filter_args.keys()):
+                # if ((self.filter_args is None) or
+                #         (not isinstance(self.filter_args, dict)) or
+                #         (coll_id not in self.filter_args.keys())):
                 #     pass
                 # elif isinstance(self.filter_args[coll_id], ee.ComputedObject):
                 #     input_coll = input_coll.filter(self.filter_args[coll_id])
@@ -405,7 +405,7 @@ class Collection():
             interp_method='linear',
             interp_days=32,
             use_joins=True,
-            **kwargs
+            **kwargs,
             ):
         """
 
@@ -453,7 +453,7 @@ class Collection():
         elif interp_method.lower() not in ['linear']:
             raise ValueError(f'unsupported interp_method: {interp_method}')
 
-        if type(interp_days) is str and utils.is_number(interp_days):
+        if (type(interp_days) is str) and utils.is_number(interp_days):
             interp_days = int(interp_days)
         elif not type(interp_days) is int:
             raise TypeError('interp_days must be an integer')
@@ -497,17 +497,17 @@ class Collection():
         # Intentionally using model_args (instead of self.et_reference_source, etc.) in
         #   this function since model_args is passed to Image class in _build()
         # if 'et' in variables or 'et_reference' in variables:
-        if ('et_reference_source' in kwargs.keys() and
-                kwargs['et_reference_source'] is not None):
+        if (('et_reference_source' in kwargs.keys()) and
+                (kwargs['et_reference_source'] is not None)):
             self.model_args['et_reference_source'] = kwargs['et_reference_source']
-        if ('et_reference_band' in kwargs.keys() and
-                kwargs['et_reference_band'] is not None):
+        if (('et_reference_band' in kwargs.keys()) and
+                (kwargs['et_reference_band'] is not None)):
             self.model_args['et_reference_band'] = kwargs['et_reference_band']
-        if ('et_reference_factor' in kwargs.keys() and
-                kwargs['et_reference_factor'] is not None):
+        if (('et_reference_factor' in kwargs.keys()) and
+                (kwargs['et_reference_factor'] is not None)):
             self.model_args['et_reference_factor'] = kwargs['et_reference_factor']
-        if ('et_reference_resample' in kwargs.keys() and
-                kwargs['et_reference_resample'] is not None):
+        if (('et_reference_resample' in kwargs.keys()) and
+                (kwargs['et_reference_resample'] is not None)):
             self.model_args['et_reference_resample'] = kwargs['et_reference_resample'].lower()
 
         # Check that all et_reference parameters were set
@@ -554,12 +554,12 @@ class Collection():
         interp_vars = list(set(self._interp_vars) & set(variables))
 
         # To return ET, the ET fraction must be interpolated
-        if 'et' in variables and 'et_fraction' not in interp_vars:
+        if ('et' in variables) and ('et_fraction' not in interp_vars):
             interp_vars.append('et_fraction')
 
         # With the current interpolate.daily() function,
         #   something has to be interpolated in order to return et_reference
-        if 'et_reference' in variables and 'et_fraction' not in interp_vars:
+        if ('et_reference' in variables) and ('et_fraction' not in interp_vars):
             interp_vars.append('et_fraction')
 
         # The time band is always needed for interpolation
@@ -667,7 +667,7 @@ class Collection():
             """
             # et_img = None
             # et_reference_img = None
-            if ('et' in variables) or ('et_fraction') in variables:
+            if ('et' in variables) or ('et_fraction' in variables):
                 et_img = (
                     daily_coll.filterDate(agg_start_date, agg_end_date)
                     .select(['et']).sum()
@@ -699,14 +699,21 @@ class Collection():
             if 'ndvi' in variables:
                 # Compute average ndvi over the aggregation period
                 ndvi_img = (
-                    daily_coll.filterDate(agg_start_date, agg_end_date)
-                    .mean().select(['ndvi']).float()
+                    daily_coll
+                    .filterDate(agg_start_date, agg_end_date)
+                    .select(['ndvi'])
+                    .mean()
+                    .float()
                 )
                 image_list.append(ndvi_img)
             if 'count' in variables:
                 count_img = (
-                    aggregate_coll.filterDate(agg_start_date, agg_end_date)
-                    .select(['mask']).count().rename('count').uint8()
+                    aggregate_coll
+                    .filterDate(agg_start_date, agg_end_date)
+                    .select(['mask'])
+                    .reduce(ee.Reducer.count())
+                    .rename('count')
+                    .uint8()
                 )
                 image_list.append(count_img)
 
