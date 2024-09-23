@@ -10,8 +10,7 @@ import openet.sims.utils as utils
 import openet.sims as sims
 
 
-def scene_coll(variables, et_fraction=[0.4, 0.4, 0.4], et=[5, 5, 5],
-               ndvi=[0.6, 0.6, 0.6]):
+def scene_coll(variables, et_fraction=[0.4, 0.4, 0.4], et=[5, 5, 5], ndvi=[0.6, 0.6, 0.6]):
     """Return a generic scene collection to test scene interpolation functions
 
     Parameters
@@ -27,8 +26,8 @@ def scene_coll(variables, et_fraction=[0.4, 0.4, 0.4], et=[5, 5, 5],
     ee.ImageCollection
 
     """
-    img = ee.Image('LANDSAT/LC08/C01/T1_SR/LC08_044033_20170716') \
-        .select(['B2']).double().multiply(0)
+    img = ee.Image('LANDSAT/LC08/C02/T1_L2/LC08_044033_20170716') \
+        .select(['SR_B2']).double().multiply(0)
     mask = img.add(1).updateMask(1).uint8()
 
     # The time band needs to be the 0 UTC time (date)
@@ -207,7 +206,6 @@ def test_from_scene_et_fraction_t_interval_no_value():
 @pytest.mark.parametrize(
     'landsat_coll_id',
     [
-        'LANDSAT/LC08/C01/T1_SR',
         'LANDSAT/LC08/C02/T1_L2',
     ]
 )
@@ -283,11 +281,11 @@ comp_df['et_fraction'] = comp_df['etc'] / comp_df['eto']
 
 @pytest.fixture
 def synth_test_imgs():
-    landsat_coll_id = f'LANDSAT/LC08/C01/T1_SR'
+    landsat_coll_id = f'LANDSAT/LC08/C02/T1_L2'
     landsat_coll = ee.ImageCollection(landsat_coll_id)\
         .filterDate(start_date, end_date)\
         .filterBounds(ee.Geometry.Point(TEST_POINT))
-    mask = landsat_coll.first().select(['B2']).double().multiply(0)
+    mask = landsat_coll.first().select(['SR_B2']).double().multiply(0)
 
     test_imgs = []
     for index, row in comp_df.iterrows():
@@ -450,3 +448,21 @@ def test_soil_evaporation_synthetic(synth_test_imgs, synth_precip_imgs, tol=0.00
     for i in range(46, 52):
         assert abs(wb_df[wb_df.doy==i]['et'].iloc[0] -
                    comp_df[comp_df.doy==i]['etc'].iloc[0]) < tol
+
+
+def test_from_scene_et_fraction_t_interval_custom_daily_count(tol=0.0001):
+    output_coll = interpolate.from_scene_et_fraction(
+        scene_coll(['et_fraction', 'ndvi', 'time', 'mask']),
+        start_date='2017-07-01', end_date='2017-08-01',
+        variables=['et_fraction', 'daily_count'],
+        interp_args={'interp_method': 'linear', 'interp_days': 32},
+        model_args={'et_reference_source': 'IDAHO_EPSCOR/GRIDMET',
+                    'et_reference_band': 'eto',
+                    'et_reference_factor': 1.0,
+                    'et_reference_resample': 'nearest'},
+        t_interval='custom',
+    )
+    TEST_POINT = (-121.5265, 38.7399)
+    output = utils.point_coll_value(output_coll, TEST_POINT, scale=30)
+    assert abs(output['et_fraction']['2017-07-01'] - 0.4) <= tol
+    assert output['daily_count']['2017-07-01'] == 31

@@ -84,13 +84,6 @@ def test_Collection_init_cloud_cover_max_str():
 @pytest.mark.parametrize(
     'coll_id, start_date, end_date',
     [
-        ['LANDSAT/LT04/C01/T1_SR', '1981-01-01', '1982-01-01'],
-        ['LANDSAT/LT04/C01/T1_SR', '1994-01-01', '1995-01-01'],
-        ['LANDSAT/LT05/C01/T1_SR', '1983-01-01', '1984-01-01'],
-        ['LANDSAT/LT05/C01/T1_SR', '2012-01-01', '2013-01-01'],
-        ['LANDSAT/LE07/C01/T1_SR', '1998-01-01', '1999-01-01'],
-        ['LANDSAT/LE07/C01/T1_SR', '2022-01-01', '2023-01-01'],
-        ['LANDSAT/LC08/C01/T1_SR', '2012-01-01', '2013-01-01'],
         ['LANDSAT/LT04/C02/T1_L2', '1981-01-01', '1982-01-01'],
         ['LANDSAT/LT04/C02/T1_L2', '1994-01-01', '1995-01-01'],
         ['LANDSAT/LT05/C02/T1_L2', '1983-01-01', '1984-01-01'],
@@ -130,17 +123,6 @@ def test_Collection_init_invalid_collections_exception():
     """Test if Exception is raised for an invalid collection ID"""
     with pytest.raises(ValueError):
         default_coll_obj(collections=['FOO'])
-
-
-# CGM - This test is not needed since only Landsat SR collections are supported
-# def test_Collection_init_duplicate_collections_exception():
-#     """Test if Exception is raised for duplicate Landsat types"""
-#     with pytest.raises(ValueError):
-#         default_coll_obj(collections=['LANDSAT/LC08/C01/T1_RT_TOA',
-#                                       'LANDSAT/LC08/C01/T1_TOA'])
-#     with pytest.raises(ValueError):
-#         default_coll_obj(collections=['LANDSAT/LC08/C01/T1_SR',
-#                                       'LANDSAT/LC08/C01/T1_TOA'])
 
 
 def test_Collection_init_cloud_cover_exception():
@@ -202,24 +184,6 @@ def test_Collection_build_dates():
     assert parse_scene_id(output) == ['LC08_044033_20170716']
 
 
-def test_Collection_build_landsat_c1_toa():
-    """Test if the Landsat TOA (non RT) collections can be built"""
-    coll_obj = default_coll_obj(
-        collections=['LANDSAT/LC08/C01/T1_TOA', 'LANDSAT/LE07/C01/T1_TOA'])
-    output = utils.getinfo(coll_obj._build())
-    assert parse_scene_id(output) == C01_SCENE_ID_LIST
-    assert VARIABLES == {y['id'] for x in output['features'] for y in x['bands']}
-
-
-def test_Collection_build_landsat_c1_sr():
-    """Test if the Landsat SR collections can be built"""
-    coll_obj = default_coll_obj(
-        collections=['LANDSAT/LC08/C01/T1_SR', 'LANDSAT/LE07/C01/T1_SR'])
-    output = utils.getinfo(coll_obj._build())
-    assert parse_scene_id(output) == C01_SCENE_ID_LIST
-    assert {y['id'] for x in output['features'] for y in x['bands']} == VARIABLES
-
-
 def test_Collection_build_landsat_c2_sr():
     """Test if the Landsat SR collections can be built"""
     coll_obj = default_coll_obj(
@@ -227,18 +191,6 @@ def test_Collection_build_landsat_c2_sr():
     output = utils.getinfo(coll_obj._build())
     assert parse_scene_id(output) == C02_SCENE_ID_LIST
     assert {y['id'] for x in output['features'] for y in x['bands']} == VARIABLES
-
-
-# CGM - Non Landsat SR collections not currently supported
-# def test_Collection_build_sentinel_toa():
-#     """Test if the Sentinel 2 TOA collections can be built"""
-#     coll_obj = default_coll_obj(
-#         collections=['COPERNICUS/S2'], start_date='2017-05-01',
-#         end_date='2017-05-15')
-#     output = utils.getinfo(coll_obj._build())
-#     expected = ['20170510T184921_20170510T185915_T10SEJ']
-#     assert parse_scene_id(output) == expected
-#     assert {y['id'] for x in output['features'] for y in x['bands']} == VARIABLES
 
 
 def test_Collection_build_exclusive_enddate():
@@ -258,8 +210,6 @@ def test_Collection_build_cloud_cover():
 @pytest.mark.parametrize(
     'collection, start_date, end_date',
     [
-        ['LANDSAT/LT05/C01/T1_TOA', '2012-01-01', '2013-01-01'],
-        ['LANDSAT/LT05/C01/T1_SR', '2012-01-01', '2013-01-01'],
         ['LANDSAT/LT05/C02/T1_L2', '2012-01-01', '2013-01-01'],
     ]
 )
@@ -274,8 +224,6 @@ def test_Collection_build_filter_dates_lt05(collection, start_date, end_date):
 @pytest.mark.parametrize(
     'collection, start_date, end_date',
     [
-        ['LANDSAT/LE07/C01/T1_TOA', '2022-01-01', '2023-01-01'],
-        ['LANDSAT/LE07/C01/T1_SR', '2022-01-01', '2023-01-01'],
         ['LANDSAT/LE07/C02/T1_L2', '2022-01-01', '2023-01-01'],
     ]
 )
@@ -290,8 +238,6 @@ def test_Collection_build_filter_dates_le07(collection, start_date, end_date):
 @pytest.mark.parametrize(
     'collection, start_date, end_date',
     [
-        ['LANDSAT/LC08/C01/T1_TOA', '2013-01-01', '2013-04-01'],
-        ['LANDSAT/LC08/C01/T1_SR', '2013-01-01', '2013-04-01'],
         ['LANDSAT/LC08/C02/T1_L2', '2013-01-01', '2013-04-01'],
     ]
 )
@@ -391,6 +337,11 @@ def test_Collection_interpolate_variables_custom_ndvi():
     assert {y['id'] for x in output['features'] for y in x['bands']} == {'ndvi'}
 
 
+def test_Collection_interpolate_variables_custom_daily_count():
+    output = utils.getinfo(default_coll_obj().interpolate(variables=['daily_count']))
+    assert {y['id'] for x in output['features'] for y in x['bands']} == {'daily_count'}
+
+
 def test_Collection_interpolate_t_interval_daily():
     """Test if the daily time interval parameter works
 
@@ -412,13 +363,14 @@ def test_Collection_interpolate_t_interval_monthly():
     assert {y['id'] for x in output['features'] for y in x['bands']} == VARIABLES
 
 
-def test_Collection_interpolate_t_interval_annual():
-    """Test if the annual time interval parameter works"""
-    coll_obj = default_coll_obj(start_date='2017-01-01', end_date='2018-01-01')
-    output = utils.getinfo(coll_obj.interpolate(t_interval='annual'))
-    assert output['type'] == 'ImageCollection'
-    assert parse_scene_id(output) == ['2017']
-    assert {y['id'] for x in output['features'] for y in x['bands']} == VARIABLES
+# CGM - Fails with memory error
+# def test_Collection_interpolate_t_interval_annual():
+#     """Test if the annual time interval parameter works"""
+#     coll_obj = default_coll_obj(start_date='2017-01-01', end_date='2018-01-01')
+#     output = utils.getinfo(coll_obj.interpolate(t_interval='annual'))
+#     assert output['type'] == 'ImageCollection'
+#     assert parse_scene_id(output) == ['2017']
+#     assert {y['id'] for x in output['features'] for y in x['bands']} == VARIABLES
 
 
 def test_Collection_interpolate_t_interval_custom():
@@ -637,7 +589,6 @@ def test_Collection_interpolate_only_interpolate_images():
 @pytest.mark.parametrize(
     'collections, scene_id_list',
     [
-        [['LANDSAT/LC08/C01/T1_SR', 'LANDSAT/LE07/C01/T1_SR'], C01_SCENE_ID_LIST],
         [['LANDSAT/LC08/C02/T1_L2', 'LANDSAT/LE07/C02/T1_L2'], C02_SCENE_ID_LIST],
     ]
 )

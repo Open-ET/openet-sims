@@ -199,20 +199,25 @@ def from_scene_et_fraction(scene_coll, start_date, end_date, variables,
     interp_vars = list(set(_interp_vars) & set(variables))
 
     # To return ET, the ETf must be interpolated
-    if 'et' in variables and 'et_fraction' not in interp_vars:
-        interp_vars.append('et_fraction')
+    if ('et' in variables) and ('et_fraction' not in interp_vars):
+        interp_vars = interp_vars + ['et_fraction']
 
     # With the current interpolate.daily() function,
     #   something has to be interpolated in order to return et_reference
-    if 'et_reference' in variables and 'et_fraction' not in interp_vars:
-        interp_vars.append('et_fraction')
+    if ('et_reference' in variables) and ('et_fraction' not in interp_vars):
+        interp_vars = interp_vars + ['et_fraction']
+
+    # To compute the daily count, the ETf must be interpolated
+    if ('daily_count' in variables) and ('et_fraction' not in interp_vars):
+        interp_vars = interp_vars + ['et_fraction']
 
     # The time band is always needed for interpolation
-    interp_vars.append('time')
+    if 'time' not in interp_vars:
+        interp_vars = interp_vars + ['time']
 
     # The NDVI band is always needed for the soil water balance
-    if estimate_soil_evaporation and 'ndvi' not in interp_vars:
-        interp_vars.append('ndvi')
+    if estimate_soil_evaporation and ('ndvi' not in interp_vars):
+        interp_vars = interp_vars + ['ndvi']
 
     # Filter scene collection to the interpolation range
     # This probably isn't needed since scene_coll was built to this range
@@ -221,7 +226,7 @@ def from_scene_et_fraction(scene_coll, start_date, end_date, variables,
     # For count, compute the composite/mosaic image for the mask band only
     if 'count' in variables:
         aggregate_coll = openet.core.interpolate.aggregate_to_daily(
-            image_coll = scene_coll.select(['mask']),
+            image_coll=scene_coll.select(['mask']),
             start_date=start_date, end_date=end_date)
         # The following is needed because the aggregate collection can be
         #   empty if there are no scenes in the target date range but there
@@ -303,54 +308,59 @@ def from_scene_et_fraction(scene_coll, start_date, end_date, variables,
         if 'et_fraction' in variables:
             # Compute average et fraction over the aggregation period
             image_list.append(
-                et_img.divide(et_reference_img).rename(
-                    ['et_fraction']).float())
+                et_img.divide(et_reference_img).rename(['et_fraction']).float()
+            )
         if 'ndvi' in variables:
             # Compute average ndvi over the aggregation period
             ndvi_img = daily_coll \
                 .filterDate(agg_start_date, agg_end_date) \
-                .mean().select(['ndvi']).float()
+                .select(['ndvi']).mean().float()
             image_list.append(ndvi_img)
         if 'ke' in variables:
             ke_img = daily_coll \
                 .filterDate(agg_start_date, agg_end_date) \
-                .mean().select(['ke']).float()
+                .select(['ke']).mean().float()
             image_list.append(ke_img)
         if 'kr' in variables:
             kr_img = daily_coll \
                 .filterDate(agg_start_date, agg_end_date) \
-                .mean().select(['kr']).float()
+                .select(['kr']).mean().float()
             image_list.append(kr_img)
         if 'ft' in variables:
             ft_img = daily_coll \
                 .filterDate(agg_start_date, agg_end_date) \
-                .mean().select(['ft']).float()
+                .select(['ft']).mean().float()
             image_list.append(ft_img)
         if 'de_rew' in variables:
             de_rew_img = daily_coll \
                 .filterDate(agg_start_date, agg_end_date) \
-                .mean().select(['de_rew']).float()
+                .select(['de_rew']).mean().float()
             image_list.append(de_rew_img)
         if 'precip' in variables:
             precip_img = daily_coll \
                 .filterDate(agg_start_date, agg_end_date) \
-                .mean().select(['precip']).float()
+                .select(['precip']).mean().float()
             image_list.append(precip_img)
         if 'de' in variables:
             de_img = daily_coll \
                 .filterDate(agg_start_date, agg_end_date) \
-                .mean().select(['de']).float()
+                .select(['de']).mean().float()
             image_list.append(de_img)
         if 'de_prev' in variables:
             de_prev_img = daily_coll \
                 .filterDate(agg_start_date, agg_end_date) \
-                .mean().select(['de_prev']).float()
+                .select(['de_prev']).mean().float()
             image_list.append(de_prev_img)
         if 'count' in variables:
             count_img = aggregate_coll \
                 .filterDate(agg_start_date, agg_end_date) \
                 .select(['mask']).sum().rename('count').uint8()
             image_list.append(count_img)
+        if 'daily_count' in variables:
+            daily_count_img = daily_coll \
+                .filterDate(agg_start_date, agg_end_date) \
+                .select(['et']).count().rename('daily_count').uint8()
+            image_list.append(daily_count_img)
 
         return ee.Image(image_list) \
             .set({
