@@ -211,6 +211,7 @@ def test_Image_crop_type_properties():
         ['USDA/NASS/CDL', [-120.5953, 36.8721], 24],
         ['projects/openet/assets/crop_type/v2021a', [-120.125, 36.3893], 47],
         ['projects/openet/assets/crop_type/v2023a', [-120.125, 36.3893], 47],
+        ['projects/openet/assets/crop_type/v2024a', [-120.125, 36.3893], 47],
     ]
 )
 def test_Image_crop_type_point_value(crop_type_source, xy, expected):

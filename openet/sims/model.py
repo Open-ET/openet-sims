@@ -224,6 +224,7 @@ class Model():
             CDL image ID for a specific year: 'USDA/NASS/CDL/2018'
             OpenET crop type image collection ID:
                 'projects/openet/assets/crop_type/v2023a'
+                'projects/openet/assets/crop_type/v2024a'
                 Collection will be mosaiced to a single image.
             Integer (will be converted to an EE constant image)
         year : ee.Number

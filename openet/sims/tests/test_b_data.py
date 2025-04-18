@@ -15,36 +15,16 @@ def test_cdl_dict():
     assert type(data.cdl) is dict
 
 
-# CGM - This doesn't really need to be 4 separate tests
-#   It could probably be rewritten to make a single call on the collection
-# @pytest.mark.parametrize('year', [2016, 2017, 2018, 2019])
 @pytest.mark.parametrize('year', [2019])
 def test_cdl_crop_types(year):
-    output = list(map(round, utils.getinfo(
-        ee.Image(f'USDA/NASS/CDL/{year}').get('cropland_class_values'))))
+    # Check that the codes in the data dictionary are valid CDL codes
+    output = utils.getinfo(ee.Image(f'USDA/NASS/CDL/{year}').get('cropland_class_values'))
+    output = [round(float(item)) for item in output.split(',')]
     for crop_type, crop_data in data.cdl.items():
         # Crop type 78 is non-standard CDL code being used for Grapes (table/raisin)
         if crop_type == 78:
             continue
         assert crop_type in output
-    # assert all(crop_type in output for crop_type, crop_data in data.cdl.items())
-
-# CGM - Testing to see if crop type keys have changed or all present doesn't
-#   seem like a very useful test.
-# def test_cdl_crop_types():
-# #     # CDL codes in data file:
-# #     assert set(data.cdl.keys()) == set([
-# #         1, 2, 3, 4, 5, 6, 12, 14, 21, 23, 24, 27, 28, 29, 31, 32, 33, 36,
-# #         41, 42, 43, 46, 48, 49, 51, 52, 53, 54, 58,
-# #         66, 67, 68, 69, 72, 75, 76, 77, 141, 142,
-# #         204, 206, 207, 208, 209, 211, 212, 214, 221, 222, 223, 227, 229,
-# #         243, 244, 245, 246, 247, 248])
-# #     # CDL codes not in data file:
-# #     #   10, 11, 13, 22, 25, 26, 30, 32, 34, 35, 37, 38, 39, 44, 45, 47,
-# #     #   50, 55, 56, 57, 59, 61, 70, 71, 74,
-# #     #   205, 210, 213, 215, 216, 217, 218, 219, 220, 224, 225, 226,
-# #     #   230, 231, 232, 233, 234, 235, 236, 237, 238, 239,
-# #     #   240, 241, 242, 249, 250, 254
 
 
 @pytest.mark.parametrize('param', ['crop_class', 'h_max', 'm_l', 'fr_mid'])
