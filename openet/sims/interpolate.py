@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime, timedelta
 import logging
 
 from dateutil.relativedelta import relativedelta
@@ -12,14 +12,14 @@ from . import utils
 RESAMPLE_METHODS = ['nearest', 'bilinear', 'bicubic']
 
 def from_scene_et_fraction(
-    scene_coll,
-    start_date,
-    end_date,
-    variables,
-    interp_args,
-    model_args,
-    t_interval,
-    _interp_vars=['et_fraction', 'ndvi'],
+        scene_coll,
+        start_date,
+        end_date,
+        variables,
+        interp_args,
+        model_args,
+        t_interval,
+        _interp_vars=['et_fraction', 'ndvi'],
 ):
     """Interpolate from a precomputed collection of Landsat ET fraction scenes
 
@@ -105,14 +105,14 @@ def from_scene_et_fraction(
         interp_method = interp_args['interp_method']
     else:
         interp_method = 'linear'
-        logging.debug('interp_method was not set, default to "linear"')
+        logging.debug('interp_method was not set in interp_args, default to "linear"')
 
     # Get interp_days
     if 'interp_days' in interp_args.keys():
         interp_days = interp_args['interp_days']
     else:
         interp_days = 32
-        logging.debug('interp_days was not set, default to 32')
+        logging.debug('interp_days was not set in interp_args, default to 32')
 
     # Get mask_partial_aggregations
     if 'mask_partial_aggregations' in interp_args.keys():
@@ -134,7 +134,7 @@ def from_scene_et_fraction(
     elif interp_method.lower() not in ['linear']:
         raise ValueError(f'unsupported interp_method: {interp_method}')
 
-    if ((type(interp_days) is str or type(interp_days) is float) and
+    if (((type(interp_days) is str) or (type(interp_days) is float)) and
             utils.is_number(interp_days)):
         interp_days = int(interp_days)
     elif not type(interp_days) is int:
@@ -147,37 +147,30 @@ def from_scene_et_fraction(
 
     # Adjust start/end dates based on t_interval
     # Increase the date range to fully include the time interval
-    start_dt = datetime.datetime.strptime(start_date, '%Y-%m-%d')
-    end_dt = datetime.datetime.strptime(end_date, '%Y-%m-%d')
+    start_dt = datetime.strptime(start_date, '%Y-%m-%d')
+    end_dt = datetime.strptime(end_date, '%Y-%m-%d')
     if t_interval.lower() == 'monthly':
-        start_dt = datetime.datetime(start_dt.year, start_dt.month, 1)
+        start_dt = datetime(start_dt.year, start_dt.month, 1)
         end_dt -= relativedelta(days=+1)
-        end_dt = datetime.datetime(end_dt.year, end_dt.month, 1)
+        end_dt = datetime(end_dt.year, end_dt.month, 1)
         end_dt += relativedelta(months=+1)
-    # elif t_interval.lower() == 'annual':
-    #     start_dt = datetime.datetime(start_dt.year, 1, 1)
-    #     # Covert end date to inclusive, flatten to beginning of year,
-    #     # then add a year which will make it exclusive
-    #     end_dt -= relativedelta(days=+1)
-    #     end_dt = datetime.datetime(end_dt.year, 1, 1)
-    #     end_dt += relativedelta(years=+1)
     start_date = start_dt.strftime('%Y-%m-%d')
     end_date = end_dt.strftime('%Y-%m-%d')
 
     # The start/end date for the interpolation include more days
     # (+/- interp_days) than are included in the ETr collection
     if estimate_soil_evaporation:
-        interp_start_dt = start_dt - datetime.timedelta(days=interp_days+spinup_days)
+        interp_start_dt = start_dt - timedelta(days=interp_days+spinup_days)
     else:
-        interp_start_dt = start_dt - datetime.timedelta(days=interp_days)
-    interp_end_dt = end_dt + datetime.timedelta(days=interp_days)
+        interp_start_dt = start_dt - timedelta(days=interp_days)
+    interp_end_dt = end_dt + timedelta(days=interp_days)
     interp_start_date = interp_start_dt.date().isoformat()
     interp_end_date = interp_end_dt.date().isoformat()
 
     # Get reference ET parameters
     # Supporting reading the parameters from both the interp_args and model_args dictionaries
-    # Check interp_args then model_args, but eventually drop support for reading from model_args
-    # Assume that if source and band are both set, the parameters in that section should be used
+    # Check interp_args then model_args, and eventually drop support for reading from model_args
+    # Assume that if source and band are present, factor and resample should also be read
     if ('et_reference_source' in interp_args.keys()) and ('et_reference_band' in interp_args.keys()):
         et_reference_source = interp_args['et_reference_source']
         et_reference_band = interp_args['et_reference_band']
@@ -195,7 +188,7 @@ def from_scene_et_fraction(
             if not et_reference_resample:
                 et_reference_resample = 'nearest'
                 logging.debug('et_reference_resample was not set, default to nearest')
-            elif et_reference_resample not in ['nearest', 'bilinear', 'bicubic']:
+            elif et_reference_resample not in RESAMPLE_METHODS:
                 raise ValueError(f'unsupported et_reference_resample method: '
                                  f'{et_reference_resample}')
         else:
@@ -219,7 +212,7 @@ def from_scene_et_fraction(
             if not et_reference_resample:
                 et_reference_resample = 'nearest'
                 logging.debug('et_reference_resample was not set, default to nearest')
-            elif et_reference_resample not in ['nearest', 'bilinear', 'bicubic']:
+            elif et_reference_resample not in RESAMPLE_METHODS:
                 raise ValueError(f'unsupported et_reference_resample method: '
                                  f'{et_reference_resample}')
         else:
@@ -244,15 +237,14 @@ def from_scene_et_fraction(
     # elif isinstance(et_reference_source, computedobject.ComputedObject):
     #     # Interpret computed objects as image collections
     #     daily_et_ref_coll = (
-    #         ee.ImageCollection(et_reference_source)
-    #         .filterDate(self.start_date, self.end_date)
-    #         .select([et_reference_band])
+    #         et_reference_source
+    #         .filterDate(start_date, end_date)
+    #         .select([et_reference_band], ['et_reference'])
     #     )
     else:
         raise ValueError(f'unsupported et_reference_source: {et_reference_source}')
 
     # Scale reference ET images (if necessary)
-    # CGM - Resampling is not working correctly so not including for now
     if et_reference_factor and (et_reference_factor != 1):
         def et_reference_adjust(input_img):
             return (
@@ -274,6 +266,11 @@ def from_scene_et_fraction(
     if ('et_reference' in variables) and ('et_fraction' not in interp_vars):
         interp_vars = interp_vars + ['et_fraction']
 
+    # To compute the daily count, the ETf must be interpolated
+    # We may want to add support for computing daily_count when interpolating NDVI
+    if ('daily_count' in variables) and ('et_fraction' not in interp_vars):
+        interp_vars = interp_vars + ['et_fraction']
+
     # The NDVI band is always needed for the soil water balance
     if estimate_soil_evaporation and ('ndvi' not in interp_vars):
         interp_vars = interp_vars + ['ndvi']
@@ -284,7 +281,8 @@ def from_scene_et_fraction(
     def interpolate_prep(img):
         """Prep WRS2 scene images for interpolation
 
-        "Unscale" the images using the "scale_factor" property and convert to double.
+        "Unscale" the images using the "scale_factor_et_fraction" property
+            and convert to double.
         Add a mask and time band to each image in the scene_coll since
             interpolator is assuming time and mask bands exist.
         The interpolation could be modified to get the mask from the
@@ -293,8 +291,7 @@ def from_scene_et_fraction(
 
         """
         mask_img = (
-            img.select(['et_fraction']).multiply(0).add(1).updateMask(1).uint8()
-            .rename(['mask'])
+            img.select(['et_fraction']).multiply(0).add(1).updateMask(1).uint8().rename(['mask'])
         )
         time_img = (
             img.select(['et_fraction']).double().multiply(0)
@@ -326,7 +323,7 @@ def from_scene_et_fraction(
         .map(interpolate_prep)
     )
 
-    # For count, compute the composite/mosaic image for the mask band only
+    # For scene count, compute the composite/mosaic image for the mask band only
     if ('scene_count' in variables) or ('count' in variables):
         aggregate_coll = openet.core.interpolate.aggregate_to_daily(
             image_coll=scene_coll.select(['mask']),
@@ -345,8 +342,7 @@ def from_scene_et_fraction(
         )
 
     # Interpolate to a daily time step
-    # NOTE: the daily function is not computing ET (ETf x ETo)
-    #   but is returning the target (ETo) band
+    # The time band is needed for interpolation
     daily_coll = openet.core.interpolate.daily(
         target_coll=daily_et_ref_coll,
         source_coll=scene_coll.select(interp_vars + ['time']),
@@ -354,7 +350,6 @@ def from_scene_et_fraction(
         interp_days=interp_days,
         use_joins=use_joins,
         compute_product=False,
-        # resample_method=et_reference_resample,
     )
 
     if estimate_soil_evaporation:
@@ -362,39 +357,39 @@ def from_scene_et_fraction(
 
     # The interpolate.daily() function can/will return the product of
     # the source and target image named as "{source_band}_1".
-    # The problem with this approach is that is will drop any other bands
+    # The problem with this approach is that it will drop any other bands
     # that are being interpolated (such as the ndvi).
     # daily_coll = daily_coll.select(['et_fraction_1'], ['et'])
 
-    # Compute ET from ETf and ETo (if necessary)
+    # Compute ET from ETf and ETr (if necessary)
     # This isn't needed if compute_product=True in daily() and band is renamed
-    # The check for et_fraction is needed since it is back computed from ET and ETo
-    if ('et' in variables) or ('et_fraction' in variables):
-        def compute_et(img):
-            """This function assumes ETr and ETf are present"""
-            # Apply any resampling to the reference ET image before computing ET
-            et_reference_img = img.select(['et_reference'])
-            if et_reference_resample and (et_reference_resample in ['bilinear', 'bicubic']):
-                et_reference_img = et_reference_img.resample(et_reference_resample)
+    # The check for et_fraction is needed since it is back computed from ET and ETr
+    # if 'et' in variables or 'et_fraction' in variables:
+    def compute_et(img):
+        """This function assumes ETf and ETr bands are present in the image"""
+        # Apply any resampling to the reference ET image before computing ET
+        et_reference_img = img.select(['et_reference'])
+        if et_reference_resample and (et_reference_resample in ['bilinear', 'bicubic']):
+            et_reference_img = et_reference_img.resample(et_reference_resample)
 
-            et_img = img.select(['et_fraction']).multiply(et_reference_img)
+        et_img = img.select(['et_fraction']).multiply(et_reference_img)
 
-            return img.addBands(et_img.double().rename('et'))
+        return img.addBands(et_img.double().rename('et'))
 
-        daily_coll = daily_coll.map(compute_et)
+    daily_coll = daily_coll.map(compute_et)
 
-    # CGM - This function is being declared here to avoid passing in all the common parameters
+    # This function is being declared here to avoid passing in all the common parameters
     #   such as: daily_coll, daily_et_ref_coll, interp_properties, variables, etc.
     # Long term it should probably be declared outside of this function
-    #   or read from openet-core
+    #   so it can be called directly and tested separately, or read from openet-core
     def aggregate_image(agg_start_date, agg_end_date, date_format):
         """Aggregate the daily images within the target date range
 
         Parameters
         ----------
-        agg_start_date: str
+        agg_start_date: ee.Date, str
             Start date (inclusive).
-        agg_end_date : str
+        agg_end_date : ee.Date, str
             End date (exclusive).
         date_format : str
             Date format for system:index (uses EE JODA format).
@@ -423,13 +418,13 @@ def from_scene_et_fraction(
 
         # Count the number of interpolated/aggregated values
         # Mask pixels that do not have a full aggregation count for the start/end
+        # Use "et" band so that count is a function of ET and reference ET
         if ('et' in variables) or ('et_fraction' in variables):
             aggregation_band = 'et'
-        elif 'ndvi' in interp_vars:
+        elif 'ndvi' in variables:
             aggregation_band = 'ndvi'
         else:
             raise ValueError('no supported aggregation band')
-        aggregation_days = ee.Date(agg_end_date).difference(ee.Date(agg_start_date), 'day')
         aggregation_count_img = (
             daily_coll.filterDate(agg_start_date, agg_end_date)
             .select([aggregation_band]).reduce(ee.Reducer.count())
@@ -441,10 +436,10 @@ def from_scene_et_fraction(
         if 'et_reference' in variables:
             image_list.append(eto_img.float())
         if 'et_fraction' in variables:
-            # Average et fraction over the aggregation period
+            # Compute average et fraction over the aggregation period
             image_list.append(et_img.divide(eto_img).rename(['et_fraction']).float())
         if 'ndvi' in variables:
-            # Average NDVI over the aggregation period
+            # Compute average NDVI over the aggregation period
             ndvi_img = (
                 daily_coll.filterDate(agg_start_date, agg_end_date)
                 .select(['ndvi']).mean().float()
@@ -453,7 +448,8 @@ def from_scene_et_fraction(
         if ('scene_count' in variables) or ('count' in variables):
             scene_count_img = (
                 aggregate_coll.filterDate(agg_start_date, agg_end_date)
-                .select(['mask']).reduce(ee.Reducer.sum()).rename('count').uint8()
+                .select(['mask']).reduce(ee.Reducer.sum()).rename('count')
+                .uint8()
             )
             image_list.append(scene_count_img)
         if 'daily_count' in variables:
@@ -471,8 +467,8 @@ def from_scene_et_fraction(
         output_img = ee.Image(image_list)
 
         if mask_partial_aggregations:
+            aggregation_days = ee.Date(agg_end_date).difference(ee.Date(agg_start_date), 'day')
             aggregation_count_mask = aggregation_count_img.gte(aggregation_days.subtract(1))
-            # aggregation_count_mask = agg_count_img.gte(aggregation_days)
             output_img = output_img.updateMask(aggregation_count_mask)
 
         return (
@@ -481,7 +477,6 @@ def from_scene_et_fraction(
                 'system:index': ee.Date(agg_start_date).format(date_format),
                 'system:time_start': ee.Date(agg_start_date).millis(),
             })
-            # .set(interp_properties)
         )
 
     # Combine input, interpolated, and derived values
@@ -498,7 +493,7 @@ def from_scene_et_fraction(
             # It should be since it is coming from the interpolate source
             #   collection, but what if source is GRIDMET (+6 UTC)?
             agg_start_date = ee.Date(daily_img.get('system:time_start'))
-            # CGM - This calls .sum() on collections with only one image
+            # This calls .sum() on collections with only one image
             return aggregate_image(
                 agg_start_date=agg_start_date,
                 agg_end_date=ee.Date(agg_start_date).advance(1, 'day'),
@@ -512,7 +507,6 @@ def from_scene_et_fraction(
             while iter_dt < iter_end_dt:
                 yield iter_dt.strftime('%Y-%m-%d')
                 iter_dt += relativedelta(months=+1)
-
         def agg_monthly(agg_start_date):
             return aggregate_image(
                 agg_start_date=agg_start_date,
@@ -520,6 +514,8 @@ def from_scene_et_fraction(
                 date_format='YYYYMM',
             )
         return ee.ImageCollection(ee.List(list(month_gen(start_dt, end_dt))).map(agg_monthly))
+    else:
+        raise ValueError(f'unsupported t_interval: {t_interval}')
 
 
 def daily_ke(
