@@ -212,6 +212,14 @@ def test_Image_crop_type_properties():
         ['projects/openet/assets/crop_type/v2021a', [-120.125, 36.3893], 47],
         ['projects/openet/assets/crop_type/v2023a', [-120.125, 36.3893], 47],
         ['projects/openet/assets/crop_type/v2024a', [-120.125, 36.3893], 47],
+        [
+            'projects/agriwatch/assets/deliverables/HCDL_embedding_2024_v2_original_code_updated',
+            [-158.05, 21.55], 42
+        ],
+        [
+            'projects/agriwatch/assets/deliverables/HCDL_embedding_2023_v2_original_code_updated',
+            [-158.05, 21.55], 42
+        ],
     ]
 )
 def test_Image_crop_type_point_value(crop_type_source, xy, expected):
