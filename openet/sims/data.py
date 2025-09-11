@@ -217,7 +217,38 @@ cdl = {
     176: {'crop_class': 7, 'name': 'Grass/pasture'},
 }
 
+# TODO: Check crop_class values, some of them are guesses
+# https://agriwatch.projects.earthengine.app/view/hcdl-viewer
+
 hcdl = {
+    5: {'crop_class': 1, 'name': 'Other Crops', 'cdl': 106},
+    11: {'crop_class': 7, 'name': 'Grass/pasture', 'cdl': 176},
+    14: {'crop_class': 3, 'name': 'Banana', 'cdl': 93},
+    17: {'crop_class': 3, 'name': 'Other Exotic Fruits', 'cdl': 94},
+    21: {'crop_class': 3, 'name': 'Coffee', 'cdl': 95},
+    19: {
+        'crop_class': 3, 'name': 'Citrus', 'cdl': 72,
+        'h_max': 2.5, 'm_l': 1.5, 'fr_mid': 0.71, 'fr_end': 0.94, 'ls_start': 270, 'ls_stop': 365,
+    },
+    34: {'crop_class': 3, 'name': 'Macadamia', 'cdl': 96},
+    40: {'crop_class': 3, 'name': 'Papaya', 'cdl': 97},
+    42: {'crop_class': 1, 'name': 'Pineapple', 'cdl': 98},
+    48: {'crop_class': 1, 'name': 'Sugarcane', 'cdl': 45, 'h_max': 3.0, 'm_l': 2, 'fr_mid': 1},
+    52: {'crop_class': 1, 'name': 'Taro', 'cdl': 100},
+    56: {
+        'crop_class': 1, 'name': 'Misc Vegs & Fruits', 'cdl': 47, 'h_max': 0.37, 'm_l': 2, 'fr_mid': 1},
+    57: {'crop_class': 1, 'name': 'Sweet Basil', 'cdl': 101},
+    58: {'crop_class': 1, 'name': 'Sunflower', 'cdl': 6, 'h_max': 2.0, 'm_l': 2, 'fr_mid': 1},
+    59: {'crop_class': 1, 'name': 'Corn', 'cdl': 1, 'h_max': 2.0, 'm_l': 2, 'fr_mid': 1},
+    60: {
+        'crop_class': 3, 'name': 'Avocados', 'cdl': 215,
+        'h_max': 3, 'm_l': 2, 'fr_mid': 0.81, 'fr_end': 0.73, 'ls_start': 270, 'ls_stop': 365
+    },
+    62: {'crop_class': 3, 'name': 'Coconut', 'cdl': 102},
+    64: {'crop_class': 1, 'name': 'Plumeria', 'cdl': 103},
+    65: {'crop_class': 3, 'name': 'Noni Fruit', 'cdl': 104},
+    66: {'crop_class': 3, 'name': 'Dracaena', 'cdl': 105},
+    67: {'crop_class': 1, 'name': 'Sweet Potatoes', 'cdl': 46, 'h_max': 0.4, 'm_l': 2, 'fr_mid': 1},
     # Other non-crop NCDL codes
     # HCDL  CDL  Name
     #    1  111  Open Water
@@ -226,33 +257,4 @@ hcdl = {
     #    8  131  Barren
     #   12  152  Shrubland
     #   22   99  Commercial Forest*
-
-    # TODO: Check crop_class values, some of them are guesses
-    5: {'crop_class': 1, 'name': 'Other Crops', 'cdl': 106},
-    11: {'crop_class': 7, 'name': 'Grass/pasture', 'cdl': 176},
-    14: {'crop_class': 3, 'name': 'Banana', 'cdl': 93},
-    17: {'crop_class': 3, 'name': 'Other Exotic Fruits', 'cdl': 94},
-    21: {'crop_class': 3, 'name': 'Coffee', 'cdl': 95},
-    19: {
-        'crop_class': 3, 'h_max': 2.5, 'm_l': 1.5, 'fr_mid': 0.71, 'fr_end': 0.94,
-        'ls_start': 270, 'ls_stop': 365, 'name': 'Citrus', 'cdl': 72,
-    },
-    34: {'crop_class': 3, 'name': 'Macadamia', 'cdl': 96},
-    40: {'crop_class': 3, 'name': 'Papaya', 'cdl': 97},
-    42: {'crop_class': 1, 'name': 'Pineapple', 'cdl': 98},
-    48: {'crop_class': 1, 'h_max': 3.0, 'm_l': 2, 'fr_mid': 1, 'name': 'Sugarcane', 'cdl': 45},
-    52: {'crop_class': 1, 'name': 'Taro', 'cdl': 100},
-    56: {'crop_class': 1, 'h_max': 0.37, 'm_l': 2, 'fr_mid': 1, 'name': 'Misc Vegs & Fruits', 'cdl': 47},
-    57: {'crop_class': 1, 'name': 'Sweet Basil', 'cdl': 101},
-    58: {'crop_class': 1, 'h_max': 2.0, 'm_l': 2, 'fr_mid': 1, 'name': 'Sunflower', 'cdl': 6},
-    59: {'crop_class': 1, 'h_max': 2.0, 'm_l': 2, 'fr_mid': 1,  'name': 'Corn', 'cdl': 1},
-    60: {
-        'crop_class': 3, 'h_max': 3, 'm_l': 2, 'fr_mid': 0.81, 'fr_end': 0.73,
-        'ls_start': 270, 'ls_stop': 365, 'name': 'Avocados', 'cdl': 215
-    },
-    62: {'crop_class': 3, 'name': 'Coconut', 'cdl': 102},
-    64: {'crop_class': 1, 'name': 'Plumeria', 'cdl': 103},
-    65: {'crop_class': 3, 'name': 'Noni Fruit', 'cdl': 104},
-    66: {'crop_class': 3, 'name': 'Dracaena', 'cdl': 105},
-    67: {'crop_class': 1, 'h_max': 0.4, 'm_l': 2, 'fr_mid': 1, 'name': 'Sweet Potatoes', 'cdl': 46},
 }
