@@ -235,8 +235,7 @@ hcdl = {
     42: {'crop_class': 1, 'name': 'Pineapple', 'cdl': 98},
     48: {'crop_class': 1, 'name': 'Sugarcane', 'cdl': 45, 'h_max': 3.0, 'm_l': 2, 'fr_mid': 1},
     52: {'crop_class': 1, 'name': 'Taro', 'cdl': 100},
-    56: {
-        'crop_class': 1, 'name': 'Misc Vegs & Fruits', 'cdl': 47, 'h_max': 0.37, 'm_l': 2, 'fr_mid': 1},
+    56: {'crop_class': 1, 'name': 'Misc Vegs & Fruits', 'cdl': 47, 'h_max': 0.37, 'm_l': 2, 'fr_mid': 1},
     57: {'crop_class': 1, 'name': 'Sweet Basil', 'cdl': 101},
     58: {'crop_class': 1, 'name': 'Sunflower', 'cdl': 6, 'h_max': 2.0, 'm_l': 2, 'fr_mid': 1},
     59: {'crop_class': 1, 'name': 'Corn', 'cdl': 1, 'h_max': 2.0, 'm_l': 2, 'fr_mid': 1},
@@ -249,7 +248,7 @@ hcdl = {
     65: {'crop_class': 3, 'name': 'Noni Fruit', 'cdl': 104},
     66: {'crop_class': 3, 'name': 'Dracaena', 'cdl': 105},
     67: {'crop_class': 1, 'name': 'Sweet Potatoes', 'cdl': 46, 'h_max': 0.4, 'm_l': 2, 'fr_mid': 1},
-    # Other non-crop NCDL codes
+    # Other non-crop codes
     # HCDL  CDL  Name
     #    1  111  Open Water
     #    2   63  Forest
