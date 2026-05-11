@@ -219,6 +219,7 @@ def test_Model_crop_class_constant_value(crop_type, expected):
         [0.2, 0.072],
         [0.5, 0.45],
         [0.7, 0.702],
+        [0.75, 0.765],
         [0.8, 0.828],
         [0.95, 1.0],  # Clamped
     ]
@@ -388,11 +389,12 @@ def test_Model_kd_row_crop_constant_value(fc, expected, tol=0.0001):
         [0.45, 0.675],
         [0.5, 0.75],
         [0.6, 0.8434],  # 0.6 ** (1/3)
-        # [0.7, 0.8879],  # 0.7 ** (1/3)
+        [0.7, 0.8879],  # 0.7 ** (1/3)
+        [0.75, 0.9086], # 0.75 ** (1/3)
         [0.8, 0.9283],  # 0.8 ** (1/3)
-        # [0.9, 0.9655],  # 0.9 ** (1/3)
-        [1.0, 1.0],  # 1.0 ** (1/3)
-        [1.1, 1.0],  # 1.0 ** (1/3)
+        [0.9, 0.9655],  # 0.9 ** (1/3)
+        [1.0, 1.0],     # 1.0 ** (1/3)
+        [1.1, 1.0],     # 1.0 ** (1/3)
     ]
 )
 def test_Model_kd_vine_constant_value(fc, expected, tol=0.0001):
@@ -438,6 +440,36 @@ def test_Model_kcb_constant_value(kd, doy, h_max, expected, tol=0.0001):
     m.fr_end = ee.Image.constant(0.75)
     m.ls_start = ee.Image.constant(270)
     m.ls_stop = ee.Image.constant(300)
+    output = utils.constant_image_value(m._kcb(kd=ee.Image.constant(kd)))
+    assert abs(output['kcb'] - expected) <= tol
+
+
+@pytest.mark.parametrize(
+    'crop_type, kd, doy, h_max, fr_mid, fr_end, expected',
+    [
+        # Wine grapes
+        [69, 0.9, 190, 2, 0.65, 0.43, 0.7170],
+        [69, 0.9, 210, 2, 0.65, 0.43, 0.6972],
+        [69, 0.9, 230, 2, 0.65, 0.43, 0.6180],
+        [69, 0.9, 250, 2, 0.65, 0.43, 0.5388],
+        [69, 0.9, 270, 2, 0.65, 0.43, 0.4794],
+        [69, 0.9, 290, 2, 0.65, 0.43, 0.4794],
+        # Table grapes
+        [78, 0.9, 190, 2, 0.95, 0.51, 1.0410],
+        [78, 0.9, 210, 2, 0.95, 0.51, 1.0014],
+        [78, 0.9, 230, 2, 0.95, 0.51, 0.8430],
+        [78, 0.9, 250, 2, 0.95, 0.51, 0.6846],
+        [78, 0.9, 270, 2, 0.95, 0.51, 0.5658],
+        [78, 0.9, 290, 2, 0.95, 0.51, 0.5658],
+    ]
+)
+def test_Model_kcb_vine_constant_value(crop_type, kd, doy, h_max, fr_mid, fr_end, expected, tol=0.0001):
+    m = default_model_obj(crop_type_source=crop_type, doy=doy, crop_type_kc_flag=False)
+    m.h_max = ee.Image.constant(h_max)
+    m.fr_mid = ee.Image.constant(fr_mid)
+    m.fr_end = ee.Image.constant(fr_end)
+    m.ls_start = ee.Image.constant(205)
+    m.ls_stop = ee.Image.constant(265)
     output = utils.constant_image_value(m._kcb(kd=ee.Image.constant(kd)))
     assert abs(output['kcb'] - expected) <= tol
 

@@ -4,12 +4,14 @@ version = "0.2.7"
 authors = [
     { name = "Alberto Guzman", email = "aguzman@csumb.edu" },
 ]
+maintainers = [
+    { name = "Charles Morton", email = "charles.morton@dri.edu" },
+]
 description = "Earth Engine implementation of the SIMS model"
 readme = "README.rst"
 requires-python = ">=3.9"
 keywords = ["SIMS", "OpenET", "Earth Engine", "Evapotranspiration", "Landsat"]
-license = {file = "LICENSE.txt"}
-# license = {text = "Apache-2.0"}
+license = {text = "Apache-2.0"}
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: Apache Software License",
