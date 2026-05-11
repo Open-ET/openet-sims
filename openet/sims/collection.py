@@ -45,10 +45,6 @@ class Collection():
         et_reference_resample=None,
         filter_args=None,
         model_args=None,
-        # model_args={'et_reference_source': 'IDAHO_EPSCOR/GRIDMET',
-        #             'et_reference_band': 'eto',
-        #             'et_reference_factor': 0.85,
-        #             'et_reference_resample': 'nearest},
         # **kwargs
     ):
         """Earth Engine based SIMS ETcb Image Collection object
@@ -260,6 +256,7 @@ class Collection():
                     .filterBounds(self.geometry)
                     .filterMetadata('CLOUD_COVER_LAND', 'less_than', self.cloud_cover_max)
                     .filterMetadata('CLOUD_COVER_LAND', 'greater_than', -0.5)
+                    # .filterMetadata('PROCESSING_LEVEL', 'equals', 'L2SP')
                 )
 
                 # TODO: Move this to a separate function (maybe in utils.py?)
@@ -528,9 +525,7 @@ class Collection():
 
         # Build initial scene image collection
         scene_coll = self._build(
-            variables=interp_vars,
-            start_date=interp_start_date,
-            end_date=interp_end_date,
+            variables=interp_vars, start_date=interp_start_date, end_date=interp_end_date
         )
 
         # For count, compute the composite/mosaic image for the mask band only
