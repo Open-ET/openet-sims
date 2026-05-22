@@ -523,10 +523,14 @@ def daily_ke(
         model_args,  # CGM - This parameter isn't used
         precip_source='IDAHO_EPSCOR/GRIDMET',
         precip_band='pr',
-        fc_source='projects/eeflux/soils/gsmsoil_mu_a_fc_10cm_albers_100',
-        fc_band='b1',
-        wp_source='projects/eeflux/soils/gsmsoil_mu_a_wp_10cm_albers_100',
-        wp_band='b1',
+        fc_source='projects/openet/assets/soil/ancillary/gsmsoil_mu_a_fc_10cm_albers_100',
+        fc_band='fc',
+        wp_source='projects/openet/assets/soil/ancillary/gsmsoil_mu_a_wp_10cm_albers_100',
+        wp_band='wp',
+        # fc_source='projects/eeflux/soils/gsmsoil_mu_a_fc_10cm_albers_100',
+        # fc_band='b1',
+        # wp_source='projects/eeflux/soils/gsmsoil_mu_a_wp_10cm_albers_100',
+        # wp_band='b1',
         **kwargs
         ):
     """Compute daily Ke values by simulating evaporable zone water balance
@@ -542,7 +546,7 @@ def daily_ke(
     precip_source : str, optional
         GEE data source for gridded precipitation data, default is gridMET.
     precip_band : str, option
-        GEE Image band that contains gridded precipitaiton data, default is
+        GEE Image band that contains gridded precipitation data, default is
         'pr', which is the band for gridMET.
     fc_source : str, ee.Image
         GEE Image of soil field capacity values
