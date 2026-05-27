@@ -152,8 +152,8 @@ def test_Model_crop_type_source_cdl_image_exception():
         'projects/openet/assets/crop_type/v2024a',
         'projects/openet/assets/crop_type/v2023a',
         'projects/openet/assets/crop_type/v2021a',
-        # 'projects/openet/crop_type/v2021a',
-        # 'projects/earthengine-legacy/assets/projects/openet/crop_type/v2021a',
+        'projects/agriwatch/assets/deliverables/HCDL_embedding_2024_v2_original_code_updated',
+        'projects/agriwatch/assets/deliverables/HCDL_embedding_2023_v2_original_code_updated',
     ]
 )
 def test_Model_crop_type_source_openet_crop_type(crop_type_source):

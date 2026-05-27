@@ -6,4 +6,7 @@ from . import interpolate
 
 MODEL_NAME = 'SIMS'
 
-# __version__ = metadata.version(__package__ or __name__)
+from importlib import metadata
+
+__version__ = metadata.version(__package__.replace('.', '-') or __name__.replace('.', '-'))
+# __version__ = metadata.version('openet-sims')

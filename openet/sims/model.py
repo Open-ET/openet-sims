@@ -48,8 +48,8 @@ class Model():
             Crop type source.  The default is the Cropland Data Layer (CDL) assets.
             The source should be an Earth Engine Image ID (or ee.Image).
             Currently only the OpenET collection and CDL images are supported.
-        crop_type_remap : {'CDL'}, optional
-            Currently only CDL crop type values are supported.
+        crop_type_remap : {'CDL', 'HCDL'}, optional
+            Currently only CDL and HCDL (Hawaii) crop type values are supported.
         crop_type_kc_flag : bool, optional
             If True, compute Kc using crop type specific coefficients.
             If False, use generic crop class coefficients. The default is False.
@@ -268,8 +268,9 @@ class Model():
             crop_type_img = ee.Image(cdl_coll.first())
             properties = properties.set('id', crop_type_img.get('system:id'))
         elif (type(self.crop_type_source) is str and
-                self.crop_type_source.upper().startswith('USDA/NASS/CDL')):
-            # Assume source is a single CDL image ID
+              (self.crop_type_source.upper().startswith('USDA/NASS/CDL') or
+               self.crop_type_source.startswith('projects/agriwatch/assets/'))):
+            # Assume source is a single CDL like image ID
             crop_type_img = ee.Image(self.crop_type_source).select(['cropland'])
             properties = properties.set('id', crop_type_img.get('system:id'))
         elif (type(self.crop_type_source) is str and
@@ -320,6 +321,8 @@ class Model():
         """
         if self.crop_type_remap.upper() == 'CDL':
             return data.cdl
+        elif self.crop_type_remap.upper() == 'HCDL':
+            return data.hcdl
         else:
             raise ValueError(f'unsupported crop_type_remap: "{self.crop_type_remap}"')
 
