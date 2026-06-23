@@ -228,9 +228,7 @@ class Image():
             if self.et_reference_resample in ['bilinear', 'bicubic']:
                 et_reference_img = et_reference_img.resample(self.et_reference_resample)
         else:
-            raise ValueError(
-                f'unsupported et_reference_source: {self.et_reference_source}'
-            )
+            raise ValueError(f'unsupported et_reference_source: {self.et_reference_source}')
 
         if self.et_reference_factor:
             et_reference_img = et_reference_img.multiply(self.et_reference_factor)
@@ -313,8 +311,7 @@ class Image():
 
         """
         return (
-            self.kc.multiply(0).add(1).updateMask(1)
-            .rename(['mask']).set(self._properties).uint8()
+            self.kc.multiply(0).add(1).updateMask(1).rename(['mask']).set(self._properties).uint8()
         )
 
     @lazy_property
@@ -419,25 +416,48 @@ class Image():
 
         # Rename bands to generic names
         input_bands = ee.Dictionary({
-            'LANDSAT_4': ['SR_B1', 'SR_B2', 'SR_B3', 'SR_B4', 'SR_B5', 'SR_B7',
-                          'ST_B6', 'QA_PIXEL', 'QA_RADSAT'],
-            'LANDSAT_5': ['SR_B1', 'SR_B2', 'SR_B3', 'SR_B4', 'SR_B5', 'SR_B7',
-                          'ST_B6', 'QA_PIXEL', 'QA_RADSAT'],
-            'LANDSAT_7': ['SR_B1', 'SR_B2', 'SR_B3', 'SR_B4', 'SR_B5', 'SR_B7',
-                          'ST_B6', 'QA_PIXEL', 'QA_RADSAT'],
-            'LANDSAT_8': ['SR_B2', 'SR_B3', 'SR_B4', 'SR_B5', 'SR_B6', 'SR_B7',
-                          'ST_B10', 'QA_PIXEL', 'QA_RADSAT'],
-            'LANDSAT_9': ['SR_B2', 'SR_B3', 'SR_B4', 'SR_B5', 'SR_B6', 'SR_B7',
-                          'ST_B10', 'QA_PIXEL', 'QA_RADSAT'],
+            'LANDSAT_4': ['SR_B1', 'SR_B2', 'SR_B3', 'SR_B4', 'SR_B5', 'SR_B7', 'ST_B6', 'QA_PIXEL', 'QA_RADSAT'],
+            'LANDSAT_5': ['SR_B1', 'SR_B2', 'SR_B3', 'SR_B4', 'SR_B5', 'SR_B7', 'ST_B6', 'QA_PIXEL', 'QA_RADSAT'],
+            'LANDSAT_7': ['SR_B1', 'SR_B2', 'SR_B3', 'SR_B4', 'SR_B5', 'SR_B7', 'ST_B6', 'QA_PIXEL', 'QA_RADSAT'],
+            'LANDSAT_8': ['SR_B2', 'SR_B3', 'SR_B4', 'SR_B5', 'SR_B6', 'SR_B7', 'ST_B10', 'QA_PIXEL', 'QA_RADSAT'],
+            'LANDSAT_9': ['SR_B2', 'SR_B3', 'SR_B4', 'SR_B5', 'SR_B6', 'SR_B7', 'ST_B10', 'QA_PIXEL', 'QA_RADSAT'],
         })
-        output_bands = ['blue', 'green', 'red', 'nir', 'swir1', 'swir2',
-                        'lst', 'QA_PIXEL', 'QA_RADSAT']
+        output_bands = ['blue', 'green', 'red', 'nir', 'swir1', 'swir2', 'lst', 'QA_PIXEL', 'QA_RADSAT']
         prep_image = (
             sr_image
             .select(input_bands.get(spacecraft_id), output_bands)
             .multiply([0.0000275, 0.0000275, 0.0000275, 0.0000275, 0.0000275, 0.0000275, 0.00341802, 1, 1])
             .add([-0.2, -0.2, -0.2, -0.2, -0.2, -0.2, 149.0, 0, 0])
         )
+
+        # Adjust Landsat TM and ETM+ reflectance values to better harmonize with Landsat OLI
+        if "harmonize_l57" in kwargs.keys():
+            assert isinstance(kwargs['harmonize_l57'], bool), "selection type must be a boolean"
+            # Remove from kwargs since it is not a valid argument for Image init
+            harmonize_l57 = kwargs.pop('harmonize_l57')
+        else:
+            harmonize_l57 = False
+
+        if harmonize_l57:
+            harmonization_slope = ee.Dictionary({
+                'LANDSAT_4': [0.906209, 0.929918, 0.944746, 0.944342, 0.927028, 0.927131, 1.0, 1, 1],
+                'LANDSAT_5': [0.906209, 0.929918, 0.944746, 0.944342, 0.927028, 0.927131, 1.0, 1, 1],
+                'LANDSAT_7': [0.906209, 0.929918, 0.944746, 0.944342, 0.927028, 0.927131, 1.0, 1, 1],
+                'LANDSAT_8': [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1],
+                'LANDSAT_9': [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1],
+            })
+            harmonization_intercept = ee.Dictionary({
+                'LANDSAT_4': [0.000643, 0.003967, 0.000941, 0.023216, 0.018940, 0.014738, 0.0, 0, 0],
+                'LANDSAT_5': [0.000643, 0.003967, 0.000941, 0.023216, 0.018940, 0.014738, 0.0, 0, 0],
+                'LANDSAT_7': [0.000643, 0.003967, 0.000941, 0.023216, 0.018940, 0.014738, 0.0, 0, 0],
+                'LANDSAT_8': [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0, 0],
+                'LANDSAT_9': [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0, 0],
+            })
+            prep_image = (
+                prep_image
+                .multiply(ee.Image.constant(harmonization_slope.get(spacecraft_id)))
+                .add(ee.Image.constant(harmonization_intercept.get(spacecraft_id)))
+            )
 
         # Default the cloudmask flags to True if they were not
         # Eventually these will probably all default to True in openet.core

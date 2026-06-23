@@ -214,7 +214,7 @@ cdl = {
     61: {'crop_class': 6, 'name': 'Fallow/Idle Cropland'},
 
     # Grass pasture
-    176: {'crop_class': 7, 'name': 'Grass/pasture'},
+    176: {'crop_class': 7, 'name': 'Grassland/pasture'},
 }
 
 # TODO: Check crop_class values, some of them are guesses
@@ -222,7 +222,7 @@ cdl = {
 
 hcdl = {
     5: {'crop_class': 1, 'name': 'Other Crops', 'cdl': 106},
-    11: {'crop_class': 7, 'name': 'Grass/pasture', 'cdl': 176},
+    11: {'crop_class': 7, 'name': 'Grassland/pasture', 'cdl': 176},
     14: {'crop_class': 3, 'name': 'Banana', 'cdl': 93},
     17: {'crop_class': 3, 'name': 'Other Exotic Fruits', 'cdl': 94},
     21: {'crop_class': 3, 'name': 'Coffee', 'cdl': 95},
