@@ -437,6 +437,14 @@ class Image():
         else:
             harmonize_l57 = False
 
+        # Adjust Landsat OLI reflectance values to better harmonize with Landsat TM and ETM+
+        if "harmonize_l89" in kwargs.keys():
+            assert isinstance(kwargs['harmonize_l89'], bool), "selection type must be a boolean"
+            # Remove from kwargs since it is not a valid argument for Image init
+            harmonize_l89 = kwargs.pop('harmonize_l89')
+        else:
+            harmonize_l89 = False
+
         # if harmonize_l57:
         #     harmonization_slope = ee.Dictionary({
         #         'LANDSAT_4': [0.906209, 0.929918, 0.944746, 0.944342, 0.927028, 0.927131, 1.0, 1, 1],
@@ -497,7 +505,7 @@ class Image():
         return cls(input_image, reflectance_type='SR', **kwargs)
 
     @staticmethod
-    def _ndvi(landsat_image, harmonize_l57=False):
+    def _ndvi(landsat_image, harmonize_l57=False, harmonize_l89=False):
         """Normalized difference vegetation index
 
         Parameters
@@ -505,7 +513,9 @@ class Image():
         landsat_image : ee.Image
             "Prepped" Landsat image with standardized band names.
         harmonize_l57 : bool
-            If True, adjust NDVI values to harmonize Landsat ETM+ to OLI.
+            If True, adjust NDVI values to harmonize Landsat TM/ETM+ to OLI.
+        harmonize_l89 : bool
+            If True, adjust NDVI values to harmonize Landsat OLI to TM/ETM+.
 
         Returns
         -------
@@ -535,11 +545,21 @@ class Image():
         #ndvi = ndvi.where(nir.lte(0.01).And(red.lte(0)), 0)
 
         if harmonize_l57:
+            # OLI = (0.0575 * ETM^3) + (-0.3197 * ETM^2) + (1.2289 * ETM) + 0.0055
             ndvi = (
                 ndvi.pow(3).multiply(0.0575)
                 .add(ndvi.pow(2).multiply(-0.3197))
                 .add(ndvi.multiply(1.2289))
                 .add(0.0055)
+                .max(0)
+            )
+        elif harmonize_l89:
+            # ETM = (-0.1483 * OLI^3) + (0.4029 * OLI^2) + (0.7318 * OLI) + 0.0077
+            ndvi = (
+                ndvi.pow(3).multiply(-0.1483)
+                .add(ndvi.pow(2).multiply(0.4029))
+                .add(ndvi.multiply(0.7318))
+                .add(0.0077)
                 .max(0)
             )
 
