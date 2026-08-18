@@ -328,8 +328,7 @@ class Image():
     # @lazy_property
     # def quality(self):
     #     """Set quality to 1 for all active pixels (for now)"""
-    #     return self.mask\
-    #         .rename(['quality']).set(self._properties)
+    #     return self.mask.rename(['quality']).set(self._properties)
 
     @lazy_property
     def time(self):
@@ -438,26 +437,26 @@ class Image():
         else:
             harmonize_l57 = False
 
-        if harmonize_l57:
-            harmonization_slope = ee.Dictionary({
-                'LANDSAT_4': [0.906209, 0.929918, 0.944746, 0.944342, 0.927028, 0.927131, 1.0, 1, 1],
-                'LANDSAT_5': [0.906209, 0.929918, 0.944746, 0.944342, 0.927028, 0.927131, 1.0, 1, 1],
-                'LANDSAT_7': [0.906209, 0.929918, 0.944746, 0.944342, 0.927028, 0.927131, 1.0, 1, 1],
-                'LANDSAT_8': [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1],
-                'LANDSAT_9': [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1],
-            })
-            harmonization_intercept = ee.Dictionary({
-                'LANDSAT_4': [0.000643, 0.003967, 0.000941, 0.023216, 0.018940, 0.014738, 0.0, 0, 0],
-                'LANDSAT_5': [0.000643, 0.003967, 0.000941, 0.023216, 0.018940, 0.014738, 0.0, 0, 0],
-                'LANDSAT_7': [0.000643, 0.003967, 0.000941, 0.023216, 0.018940, 0.014738, 0.0, 0, 0],
-                'LANDSAT_8': [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0, 0],
-                'LANDSAT_9': [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0, 0],
-            })
-            prep_image = (
-                prep_image
-                .multiply(ee.Image.constant(harmonization_slope.get(spacecraft_id)))
-                .add(ee.Image.constant(harmonization_intercept.get(spacecraft_id)))
-            )
+        # if harmonize_l57:
+        #     harmonization_slope = ee.Dictionary({
+        #         'LANDSAT_4': [0.906209, 0.929918, 0.944746, 0.944342, 0.927028, 0.927131, 1.0, 1, 1],
+        #         'LANDSAT_5': [0.906209, 0.929918, 0.944746, 0.944342, 0.927028, 0.927131, 1.0, 1, 1],
+        #         'LANDSAT_7': [0.906209, 0.929918, 0.944746, 0.944342, 0.927028, 0.927131, 1.0, 1, 1],
+        #         'LANDSAT_8': [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1],
+        #         'LANDSAT_9': [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1],
+        #     })
+        #     harmonization_intercept = ee.Dictionary({
+        #         'LANDSAT_4': [0.000643, 0.003967, 0.000941, 0.023216, 0.018940, 0.014738, 0.0, 0, 0],
+        #         'LANDSAT_5': [0.000643, 0.003967, 0.000941, 0.023216, 0.018940, 0.014738, 0.0, 0, 0],
+        #         'LANDSAT_7': [0.000643, 0.003967, 0.000941, 0.023216, 0.018940, 0.014738, 0.0, 0, 0],
+        #         'LANDSAT_8': [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0, 0],
+        #         'LANDSAT_9': [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0, 0],
+        #     })
+        #     prep_image = (
+        #         prep_image
+        #         .multiply(ee.Image.constant(harmonization_slope.get(spacecraft_id)))
+        #         .add(ee.Image.constant(harmonization_intercept.get(spacecraft_id)))
+        #     )
 
         # Default the cloudmask flags to True if they were not
         # Eventually these will probably all default to True in openet.core
@@ -482,7 +481,7 @@ class Image():
 
         # Build the input image
         # Eventually send the QA band or a cloud mask through also
-        input_image = ee.Image([cls._ndvi(prep_image)])
+        input_image = ee.Image([cls._ndvi(prep_image, harmonize_l57)])
 
         # Apply the cloud mask and add properties
         input_image = (
@@ -498,13 +497,15 @@ class Image():
         return cls(input_image, reflectance_type='SR', **kwargs)
 
     @staticmethod
-    def _ndvi(landsat_image):
+    def _ndvi(landsat_image, harmonize_l57=False):
         """Normalized difference vegetation index
 
         Parameters
         ----------
         landsat_image : ee.Image
             "Prepped" Landsat image with standardized band names.
+        harmonize_l57 : bool
+            If True, adjust NDVI values to harmonize Landsat ETM+ to OLI.
 
         Returns
         -------
@@ -532,6 +533,16 @@ class Image():
         #ndvi = ndvi.where(nir.lt(0).Or(red.lt(0)), 0)
         #ndvi = ndvi.where(nir.lte(0).And(red.lte(0.01)), 0)
         #ndvi = ndvi.where(nir.lte(0.01).And(red.lte(0)), 0)
+
+        if harmonize_l57:
+            ndvi = (
+                ndvi.pow(3).multiply(0.0575)
+                .add(ndvi.pow(2).multiply(-0.3197))
+                .add(ndvi.multiply(1.2289))
+                .add(0.0055)
+                .max(0)
+            )
+
         return ndvi
 
         # return landsat_image.normalizedDifference(['nir', 'red']).rename(['ndvi'])

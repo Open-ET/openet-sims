@@ -200,7 +200,9 @@ class Model():
 
         References
         ----------
-
+        Johnson, L. and Trout, T. (2012).  Satellite NDVI Assisted Monitoring
+            of Vegetable Crop Evapotranspiration in California’s San Joaquin
+            Valley. Remote Sensing 4(2) 439-455. DOI 10.3390/rs4020439
 
         """
         if self.reflectance_type == 'SR':
