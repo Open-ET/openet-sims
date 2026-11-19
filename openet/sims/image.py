@@ -445,6 +445,7 @@ class Image():
         else:
             harmonize_l89 = False
 
+        # # Adjust the band values directly for harmonization
         # if harmonize_l57:
         #     harmonization_slope = ee.Dictionary({
         #         'LANDSAT_4': [0.906209, 0.929918, 0.944746, 0.944342, 0.927028, 0.927131, 1.0, 1, 1],
@@ -489,7 +490,7 @@ class Image():
 
         # Build the input image
         # Eventually send the QA band or a cloud mask through also
-        input_image = ee.Image([cls._ndvi(prep_image, harmonize_l57)])
+        input_image = ee.Image([cls._ndvi(prep_image, harmonize_l57, harmonize_l89)])
 
         # Apply the cloud mask and add properties
         input_image = (
